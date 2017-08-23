@@ -4,6 +4,7 @@ import collections
 import inspect
 import json
 import os
+import re
 
 import curio
 from curio import socket
@@ -83,6 +84,7 @@ class IrcBot:
 
         self._message_callbacks = {}
         self._command_callbacks = {}
+        self._regexp_callbacks = {}
 
     def _save_state(self):
         # We're in a weird place here, so I made the design decision to only
@@ -154,8 +156,10 @@ class IrcBot:
                 await self._send(line.replace("PING", "PONG", 1))
                 continue
             msg = self._split_line(line)
-            if msg.command == "001":
+            if msg.command == "001":  # RPL_WELCOME
                 break
+            elif msg.command == "433":  # ERR_NICKNAMEINUSE
+                raise ValueError(f"The nickname {self.nick!r} is already used")
 
         async with curio.TaskGroup() as g:
             for callback in self._connection_callbacks:
@@ -214,6 +218,7 @@ class IrcBot:
             async with curio.TaskGroup() as g:
                 spawn_callbacks = True
                 if msg.command == "PRIVMSG":
+
                     command, *args = msg.args[1].strip().split(" ")
                     cmd_callbacks = self._command_callbacks.get(command, ())
                     for callback, arg_amount in cmd_callbacks:
@@ -228,6 +233,15 @@ class IrcBot:
                             coro = callback(self, msg.sender, msg.args[0],
                                             *args)
                             await g.spawn(coro)
+
+                    for regexp, regexp_callbacks in self._regexp_callbacks.items():
+                        for match in regexp.finditer(msg.args[1]):
+                            spawn_callbacks = False
+
+                            for callback in regexp_callbacks:
+                                coro = callback(self, msg.sender, msg.args[0],
+                                                match)
+                                await g.spawn(coro)
 
                 if ALWAYS_CALLBACK_PRIVMSG or spawn_callbacks:
                     # Sometimes we don't want to spawn the PRIVMSG callbacks if
@@ -278,8 +292,32 @@ class IrcBot:
         def _inner(func):
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
-            if command not in self._command_callbacks:
-                self._command_callbacks[command] = []
-            self._command_callbacks[command].append((func, arg_amount))
+            self._command_callbacks.setdefault(command, [])\
+                                   .append((func, arg_amount))
+            return func
+        return _inner
+
+    def on_regexp(self, regexp):
+        """
+        Creates a decorator that registers a regexp command handler.
+
+        The regexp command handler takes as arguments:
+            1. The bot instance
+            2. The command sender
+            3. The command recipient, usually a channel
+            4. The match object, for any groups you might wanna extract.
+
+        The regexp is searched, not just matched.
+        Your handler might get called multiple times per message,
+        depending on the amount of matches.
+        """
+
+        regexp = re.compile(regexp)
+
+        def _inner(func):
+            if not inspect.iscoroutinefunction(func):
+                raise ValueError("You can only register coroutines!")
+            self._regexp_callbacks.setdefault(regexp, [])\
+                                  .append(func)
             return func
         return _inner

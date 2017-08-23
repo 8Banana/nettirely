@@ -196,6 +196,14 @@ async def update(_self, sender, recipient, _):
         await curio.run_in_thread(worker)
 
 
+@bot.on_regexp(r"(\w+)\s+is\s+awesome!?")
+async def awesome_handler(self, sender, recipient, match):
+    awesome_person = match.group(1)
+
+    await self.send_privmsg(recipient,
+                            f"I agree, {awesome_person} is awesome!")
+
+
 async def main():
     autoupdater.initialize()
 
@@ -225,4 +233,7 @@ async def main():
             autoupdater.restart()
 
 if __name__ == "__main__":
-    curio.run(main)
+    try:
+        curio.run(main)
+    except KeyboardInterrupt:
+        pass

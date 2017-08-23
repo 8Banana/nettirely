@@ -102,3 +102,4 @@ ENV/
 
 # pyhtonbot
 /state.json
+/pyhtonbot_state.json

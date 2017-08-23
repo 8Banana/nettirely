@@ -65,4 +65,4 @@ def initialize():
     parent_globals = inspect.currentframe().f_back.f_globals
     assert parent_globals["__name__"] == "__main__"
     filepath = parent_globals["__file__"]
-    threading.Thread(target=_worker).start()
+    threading.Thread(target=_worker, daemon=True).start()
