@@ -11,8 +11,9 @@ import datetime
 import random
 import urllib.parse
 
+import asks
 import curio
-from curio import socket, subprocess
+from curio import subprocess
 
 import autoupdater
 from nettirely import IrcBot, NO_SPLITTING
@@ -59,17 +60,11 @@ def save_logs(self):
         {k: list(v) for k, v in self.state.get("logs", {}).items()}
 
 
-async def termbin(lines):
-    async with socket.socket() as sock:
-        await sock.connect(('termbin.com', 9999))
-        for line in lines:
-            assert not line.endswith('\n')
-            await sock.send(line.encode('utf-8') + b'\n')
-
-        url = (await sock.recv(1024)).decode('ascii').strip()
-        if url == 'Use netcat.':
-            return "Sorry, termbin hates me today :("
-        return url
+async def upload_log(lines):
+    print(lines)
+    resp = await asks.post("https://theelous3.net/irc_log",
+                           data="\n".join(lines))
+    return resp.text
 
 
 @bot.on_join
@@ -115,10 +110,11 @@ async def append_privmsg_to_log(self, sender, channel, message):
 
 @bot.on_command("!log", 0)
 async def send_log(self, sender, channel):
+
     msg = f"{sender.nick}: Uploading logs, this might take a second..."
     await self.send_privmsg(channel, msg)
     logs = self.state["logs"]
-    result = await termbin(logs[channel])
+    result = await upload_log(logs[channel])
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
 
 
@@ -177,7 +173,7 @@ async def autolog(self, sender, recipient, argument):
 async def autolog_send(self, sender, channel):
     if sender.nick in self.state.get("autologgers", ()):
         logs = self.state["logs"]
-        result = await termbin(logs[channel])
+        result = await upload_log(logs[channel])
 
         # We do a weird trick here.
         # Some clients show NOTICEs of the form "[CHANNELNAME] NOTICE" in the
@@ -196,20 +192,13 @@ async def update(_self, sender, recipient, _):
         await curio.run_in_thread(worker)
 
 
-@bot.on_regexp(r"(\w+)\s+is\s+awesome!?")
-async def awesome_handler(self, sender, recipient, match):
-    awesome_person = match.group(1)
-
-    await self.send_privmsg(recipient,
-                            f"I agree, {awesome_person} is awesome!")
-
-
 async def main():
+    asks.init("curio")
     autoupdater.initialize()
 
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
         await bot.connect("pyhtonbot2", "chat.freenode.net")
-        await bot.join_channel("#8banana-bottest")
+        await bot.join_channel("#8banana")
     else:
         await bot.connect("pyhtonbot", "chat.freenode.net")
         await bot.join_channel("#8banana")
