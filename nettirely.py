@@ -52,6 +52,7 @@ class IrcBot:
     """
 
     state_path = os.path.join(os.path.dirname(__file__), "state.json")
+    quit_reason = "Goodbye!"
 
     def __init__(self, encoding="utf-8"):
         """
@@ -249,6 +250,8 @@ class IrcBot:
                     for callback in callbacks:
                         await g.spawn(callback(self, msg.sender, *msg.args))
                 await g.join()
+
+        await self._send("QUIT", ":" + self.quit_reason)
 
     def on_connect(self, func):
         if not inspect.iscoroutinefunction(func):

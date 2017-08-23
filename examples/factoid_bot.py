@@ -7,8 +7,10 @@ from nettirely import IrcBot
 
 # Change this to your API key if you want the $np functionality.
 LASTFM_API_KEY = None
+ADMINS = {"darkf", "__Myst__"}
 
 bot = IrcBot()
+bot.state_path = "factoid_state.json"
 
 
 @bot.on_regexp(r"^\$(\S+)(?:\s*(.+))?")
@@ -25,6 +27,15 @@ async def factoid_handler(self, sender, recipient, match):
     elif factoid == "factoids":
         await self.send_privmsg(recipient,
                                 " ".join(bot.state.get(factoid, {})))
+    elif factoid == "at" and len(args) >= 2:
+        factoids = bot.state.get("factoids", {})
+        if args[1] in factoids:
+            await self.send_privmsg(recipient,
+                                    f"{args[0]}: {factoids[args[1]]}")
+    elif factoid == "join" and len(args) >= 1 and sender.nick in ADMINS:
+        await self.join_channel(args[0])
+    elif factoid == "quit" and sender.nick in ADMINS:
+        self.running = False
     elif factoid == "np" and len(args) >= 1 and LASTFM_API_KEY is not None:
         resp = await asks.get("http://ws.audioscrobbler.com/2.0/", params={
             "method": "user.getrecenttracks",
@@ -48,14 +59,14 @@ async def factoid_handler(self, sender, recipient, match):
             msg += f" (from {album})"
         await self.send_privmsg(recipient, msg)
     else:
-        factoids = bot.state.setdefault("factoids", {})
+        factoids = bot.state.get("factoids", {})
         if factoid in factoids:
             await self.send_privmsg(recipient, factoids[factoid])
 
 
 async def main():
     await bot.connect("factoid_bot8", "chat.freenode.net")
-    await bot.join_channel("#lpmc")
+    await bot.join_channel("#8banana-bottest")
     await bot.mainloop()
 
 
