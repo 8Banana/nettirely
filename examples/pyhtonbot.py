@@ -192,30 +192,33 @@ async def update(_self, sender, _recipient, _args):
         await curio.run_in_thread(worker)
 
 
-def _add_canned_response(self, regexp, response):
-    async def _inner(inner_self, _inner_sender, inner_recipient, _match):
+def _add_canned_response(self, limiter, regexp, response):
+    async def _inner(inner_self, _sender, recipient, _match):
         # TODO: Can we support things like \1 in the response?
-        await inner_self.send_privmsg(inner_recipient, response)
+        if limiter == "*" or recipient in limiter:
+            await inner_self.send_privmsg(recipient, response)
     self.on_regexp(regexp)(_inner)
 
 
 @bot.on_connect
 async def add_canned_responses(self):
     canned_responses = self.state.get("canned_responses", {})
-    for regexp, response in canned_responses.items():
-        _add_canned_response(self, regexp, response)
+    for regexp, (limiter, response) in canned_responses.items():
+        _add_canned_response(self, limiter, regexp, response)
 
 
 @bot.on_command("!can", NO_SPLITTING)
 async def canned_response(self, sender, recipient, args):
     try:
-        regexp, response = args.split(" ", 1)
+        limiter, regexp, response = args.split(" ", 2)
     except ValueError:
+        await self.send_privmsg(recipient,
+                                f"{sender.nick}: !can LIMITER REGEXP RESP")
         return
 
     canned_responses = self.state.setdefault("canned_responses", {})
-    canned_responses[regexp] = response
-    _add_canned_response(self, regexp, response)
+    canned_responses[regexp] = (limiter.split(","), response)
+    _add_canned_response(self, limiter, regexp, response)
     await self.send_privmsg(recipient,
                             f"{sender.nick}: Successfully canned your response.")
 
