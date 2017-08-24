@@ -4,11 +4,11 @@ The 8Banana team's own bot.
 We actually use this one on the #8Banana IRC channel :)
 """
 
-import sys
-
 import collections
 import datetime
 import random
+import re
+import sys
 import urllib.parse
 
 import asks
@@ -193,11 +193,11 @@ async def update(_self, sender, _recipient, _args):
 
 
 def _add_canned_response(self, limiter, regexp, response):
-    async def _inner(inner_self, _sender, recipient, _match):
+    async def _canned_response(inner_self, _sender, recipient, _match):
         # TODO: Can we support things like \1 in the response?
         if limiter == "*" or recipient in limiter:
             await inner_self.send_privmsg(recipient, response)
-    self.on_regexp(regexp)(_inner)
+    self.on_regexp(regexp)(_canned_response)
 
 
 @bot.on_connect
@@ -221,6 +221,23 @@ async def canned_response(self, sender, recipient, args):
     _add_canned_response(self, limiter, regexp, response)
     await self.send_privmsg(recipient,
                             f"{sender.nick}: Successfully canned your response.")
+
+@bot.on_command("!uncan", 1)
+async def uncan_response(self, sender, recipient, regexp):
+    canned_responses = self.state.get("canned_responses", {})
+
+    if regexp in canned_responses:
+        del canned_responses[regexp]
+
+        callbacks = self._regexp_callbacks[re.compile(regexp)]
+        for i, callback in reversed(enumerate(callbacks)):
+            try:
+                name = callback.__code__.co_name
+            except AttributeError:
+                continue
+
+            if name == "_canned_response":
+                del self._regexp_callbacks[regexp][i]
 
 
 async def main():
