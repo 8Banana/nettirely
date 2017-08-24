@@ -244,7 +244,7 @@ async def uncan_response(self, sender, recipient, regexp):
 async def uncan_response(self, sender, recipient, *_):
     canned_responses = self.state.get("canned_responses", {})
 
-    async self.send_privmsg(recipient,
+    await self.send_privmsg(recipient,
                             f"{sender.nick}: {' '.join(canned_responses}")
 
 
