@@ -216,6 +216,12 @@ async def canned_response(self, sender, recipient, args):
                                 f"{sender.nick}: !can LIMITER REGEXP RESP")
         return
 
+    try:
+        re.compile(regexp)
+    except re.error as e:
+        await self.send_privmsg(recipient,
+                                f"{sender.nick}: Your RegExp is invalid ({e!r}).")
+
     canned_responses = self.state.setdefault("canned_responses", {})
     canned_responses[regexp] = (limiter.split(","), response)
     _add_canned_response(self, limiter, regexp, response)
