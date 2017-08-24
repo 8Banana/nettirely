@@ -240,12 +240,13 @@ async def uncan_response(self, sender, recipient, regexp):
             if name == "_canned_response":
                 del self._regexp_callbacks[regexp][i]
 
+
 @bot.on_command("!cans")
-async def uncan_response(self, sender, recipient, *_):
+async def cans(self, sender, recipient, *_):
     canned_responses = self.state.get("canned_responses", {})
 
     await self.send_privmsg(recipient,
-                            f"{sender.nick}: {' '.join(canned_responses}")
+                            f"{sender.nick}: {' '.join(canned_responses)}")
 
 
 async def main():
