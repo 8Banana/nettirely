@@ -183,13 +183,41 @@ async def autolog_send(self, sender, channel):
 
 
 @bot.on_command("!update", NO_SPLITTING)
-async def update(_self, sender, recipient, _):
+async def update(_self, sender, _recipient, _args):
     def worker():
         with autoupdater.update_condition:
             autoupdater.update_condition.notify_all()
 
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
+
+
+def _add_canned_response(self, regexp, response):
+    async def _inner(inner_self, _inner_sender, inner_recipient, _match):
+        # TODO: Can we support things like \1 in the response?
+        await inner_self.send_privmsg(inner_recipient, response)
+    self.on_regexp(regexp)(_inner)
+
+
+@bot.on_connect
+async def add_canned_responses(self):
+    canned_responses = self.state.get("canned_responses", {})
+    for regexp, response in canned_responses.items():
+        _add_canned_response(self, regexp, response)
+
+
+@bot.on_command("!can", NO_SPLITTING)
+async def canned_response(self, sender, recipient, args):
+    try:
+        regexp, response = args.split(" ", 1)
+    except ValueError:
+        return
+
+    canned_responses = self.state.setdefault("canned_responses", {})
+    canned_responses[regexp] = response
+    _add_canned_response(self, regexp, response)
+    await self.send_privmsg(recipient,
+                            f"{sender.nick}: Successfully canned your response.")
 
 
 async def main():
