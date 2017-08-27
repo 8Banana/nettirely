@@ -9,8 +9,7 @@ from nettirely import IrcBot
 LASTFM_API_KEY = None
 ADMINS = {"darkf", "__Myst__"}
 
-bot = IrcBot()
-bot.state_path = "factoid_state.json"
+bot = IrcBot(state_path="factoid_state.json")
 
 
 @bot.on_regexp(r"^\$(\S+)(?:\s*(.+))?")

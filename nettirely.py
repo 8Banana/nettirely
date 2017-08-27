@@ -54,13 +54,16 @@ class IrcBot:
     state_path = os.path.join(os.path.dirname(__file__), "state.json")
     quit_reason = "Goodbye!"
 
-    def __init__(self, encoding="utf-8"):
+    def __init__(self, encoding="utf-8", state_path=None):
         """
         Initializes an IrcBot instance.
 
         The only parameter for the initializer is encoding.
         The other parameters you would expect are taken in other methods.
         """
+
+        if state_path is not None:
+            self.state_path = state_path
 
         self.nick = None
         self._server = None

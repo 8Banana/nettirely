@@ -25,8 +25,7 @@ FISH = (
 )
 ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
 
-bot = IrcBot()
-bot.state_path = "pyhtonbot_state.json"
+bot = IrcBot(state_path="pyhtonbot_state")
 
 
 @bot.on_command(">>>", NO_SPLITTING)
@@ -192,7 +191,7 @@ async def update(_self, sender, _recipient, _args):
         await curio.run_in_thread(worker)
 
 @bot.on_command("!reload", NO_SPLITTING)
-async def update(_self, sender, _recipient, _args):
+async def bot_reload(_self, sender, _recipient, _args):
     def worker():
         autoupdater.restart()
 
