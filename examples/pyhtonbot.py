@@ -249,11 +249,13 @@ async def uncan_response(self, sender, recipient, regexp):
 
 
 @bot.on_command("!cans")
-async def cans(self, sender, recipient, *_):
+async def cans(self, sender, _recipient, *_):
     canned_responses = self.state.get("canned_responses", {})
 
-    await self.send_privmsg(recipient,
-                            f"{sender.nick}: {' '.join(canned_responses)}")
+    for regexp, response in canned_responses.items():
+        await self.send_privmsg(sender.nick,
+                                f"{regexp!r} -> {response!r}")
+        await curio.sleep(1 / 10)  # 10 cans per second.
 
 
 async def main():
