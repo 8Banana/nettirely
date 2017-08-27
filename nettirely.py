@@ -75,10 +75,10 @@ class IrcBot:
 
         self.channel_users = {}
 
-        if os.path.isfile(self.state_path):
+        try:
             with open(self.state_path) as f:
                 self.state = json.load(f)
-        else:
+        except (ValueError, FileNotFoundError):
             self.state = {}
 
         atexit.register(self._save_state)

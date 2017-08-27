@@ -25,7 +25,7 @@ FISH = (
 )
 ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
 
-bot = IrcBot(state_path="pyhtonbot_state")
+bot = IrcBot(state_path="pyhtonbot_state.json")
 
 
 @bot.on_command(">>>", NO_SPLITTING)
