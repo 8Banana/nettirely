@@ -191,6 +191,14 @@ async def update(_self, sender, _recipient, _args):
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
 
+@bot.on_command("!reload", NO_SPLITTING)
+async def update(_self, sender, _recipient, _args):
+    def worker():
+        autoupdater.restart()
+
+    if sender.nick in ADMINS:
+        await curio.run_in_thread(worker)
+
 
 def _add_canned_response(self, limiter, regexp, response):
     async def _canned_response(inner_self, _sender, recipient, _match):
