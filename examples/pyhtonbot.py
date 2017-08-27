@@ -249,9 +249,11 @@ async def uncan_response(self, sender, recipient, regexp):
 
 
 @bot.on_command("!cans")
-async def cans(self, sender, _recipient, *_):
+async def cans(self, sender, recipient, *_):
     canned_responses = self.state.get("canned_responses", {})
 
+    await self.send_privmsg(recipient,
+                            f"{sender.nick}: Check your PMs!")
     for regexp, response in canned_responses.items():
         await self.send_privmsg(sender.nick,
                                 f"{regexp!r} -> {response!r}")
@@ -264,7 +266,7 @@ async def main():
 
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
         await bot.connect("pyhtonbot2", "chat.freenode.net")
-        await bot.join_channel("#8banana")
+        await bot.join_channel("#8banana-bottest")
     else:
         await bot.connect("pyhtonbot", "chat.freenode.net")
         await bot.join_channel("#8banana")
