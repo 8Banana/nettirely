@@ -238,21 +238,33 @@ async def canned_response(self, sender, recipient, args):
 
 
 @bot.on_command("!uncan", 1)
-async def uncan_response(self, sender, recipient, regexp):
+async def uncan_response(self, _sender, _recipient, regexp):
     canned_responses = self.state.get("canned_responses", {})
 
     if regexp in canned_responses:
         del canned_responses[regexp]
 
         callbacks = self._regexp_callbacks[re.compile(regexp)]
-        for i, callback in reversed(enumerate(callbacks)):
+
+        # You might ask "Why do you use a manual counter over enumerate?".
+        # The answer is that reversed(enumerate(iterable)) does not work, and
+        # enumerate(reversed(sequence)) doesn't work either.
+        # We could convert the enumerate(iterable) return value
+        # to a list or tuple, but that would bring all of the callbacks into
+        # memory.
+        # Keeping a manual counter is the most readable version and most memory
+        # efficient.
+        i = 0
+
+        for callback in reversed(callbacks):
             try:
                 name = callback.__code__.co_name
             except AttributeError:
-                continue
-
-            if name == "_canned_response":
-                del self._regexp_callbacks[regexp][i]
+                pass
+            else:
+                if name == "_canned_response":
+                    del self._regexp_callbacks[regexp][i]
+            i += 1
 
 
 @bot.on_command("!cans")
