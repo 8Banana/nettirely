@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+import traceback
+
 import asks
 import bs4
 import curio
 
+import autoupdater
 from nettirely import IrcBot
 
 # Change this to your API key if you want the $np functionality.
@@ -64,9 +67,18 @@ async def factoid_handler(self, sender, recipient, match):
 
 
 async def main():
+    asks.init("curio")
+    autoupdater.initialize()
+
     await bot.connect("factoid_bot8", "chat.freenode.net")
     await bot.join_channel("#8banana-bottest")
-    await bot.mainloop()
+
+    while True:
+        try:
+            await bot.mainloop()
+        except OSError:
+            traceback.print_exc()
+            autoupdater.restart()
 
 
 if __name__ == "__main__":
