@@ -245,7 +245,6 @@ async def uncan_response(self, _sender, _recipient, regexp):
         del canned_responses[regexp]
 
         callbacks = self._regexp_callbacks[re.compile(regexp)]
-
         # You might ask "Why do you use a manual counter over enumerate?".
         # The answer is that reversed(enumerate(iterable)) does not work, and
         # enumerate(reversed(sequence)) doesn't work either.
