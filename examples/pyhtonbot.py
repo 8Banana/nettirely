@@ -245,7 +245,9 @@ async def uncan_response(self, sender, recipient, regexp):
         del canned_responses[regexp]
 
         callbacks = self._regexp_callbacks[re.compile(regexp)]
-        for i, callback in reversed(enumerate(callbacks)):
+        # reversed(enumerate(callbacks)) doesn't work :(
+        for i in range(len(callbacks)-1, -1, -1):
+            callback = callbacks[i]
             try:
                 name = callback.__code__.co_name
             except AttributeError:
