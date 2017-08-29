@@ -1,6 +1,8 @@
 # nettirely
 
-`nettirely` is the only IRC bot library for Python 3 usable by humans.
+`nettirely` is the only IRC bot library for Python 3.6 usable by humans.
+
+You must use Python3.6 due to the usage of `async`/`await` and f-strings.
 
 Its API is simple to understand and usable, and will get your bot up to speed
 in a matter of minutes.
