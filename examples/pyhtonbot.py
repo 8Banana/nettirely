@@ -238,7 +238,7 @@ async def canned_response(self, sender, recipient, args):
 
 
 @bot.on_command("!uncan", 1)
-async def uncan_response(self, _sender, _recipient, regexp):
+async def uncan_response(self, _sender, recipient, regexp):
     canned_responses = self.state.get("canned_responses", {})
 
     if regexp in canned_responses:
@@ -264,6 +264,9 @@ async def uncan_response(self, _sender, _recipient, regexp):
                 if name == "_canned_response":
                     del self._regexp_callbacks[regexp][i]
             i += 1
+
+        await self.send_privmsg(recipient,
+                                f"Successfully removed {regexp!r}.")
 
 
 @bot.on_command("!cans")
