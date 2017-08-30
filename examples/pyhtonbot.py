@@ -60,7 +60,6 @@ def save_logs(self):
 
 
 async def upload_log(lines):
-    print(lines)
     resp = await asks.post("https://theelous3.net/irc_log",
                            data="\n".join(lines))
     return resp.text
