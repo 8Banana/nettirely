@@ -222,19 +222,22 @@ class IrcBot:
             async with curio.TaskGroup() as g:
                 spawn_callbacks = True
                 if msg.command == "PRIVMSG":
+                    recipient = msg.args[0]
+                    if recipient == self.nick:
+                        recipient = msg.sender.nick
 
                     command, *args = msg.args[1].strip().split(" ")
                     cmd_callbacks = self._command_callbacks.get(command, ())
                     for callback, arg_amount in cmd_callbacks:
                         if arg_amount == NO_SPLITTING:
                             spawn_callbacks = False
-                            coro = callback(self, msg.sender, msg.args[0],
+                            coro = callback(self, msg.sender, recipient,
                                             " ".join(args))
                             await g.spawn(coro)
                         elif arg_amount == ANY_ARGUMENTS or \
                                 len(args) == arg_amount:
                             spawn_callbacks = False
-                            coro = callback(self, msg.sender, msg.args[0],
+                            coro = callback(self, msg.sender, recipient,
                                             *args)
                             await g.spawn(coro)
 
@@ -243,7 +246,7 @@ class IrcBot:
                             spawn_callbacks = False
 
                             for callback in regexp_callbacks:
-                                coro = callback(self, msg.sender, msg.args[0],
+                                coro = callback(self, msg.sender, recipient,
                                                 match)
                                 await g.spawn(coro)
 
