@@ -129,7 +129,7 @@ async def update_seen(self, sender, _channel, message):
 async def show_seen(self, sender, channel, user):
     seen = self.state.get("seen", {})
 
-    if user in seen::
+    if user in seen:
         when = seen[user]
 
         for n, amount in enumerate(TIME_AMOUNTS):
