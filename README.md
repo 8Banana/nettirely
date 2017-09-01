@@ -69,3 +69,13 @@ PANGs. It allows you to just focus on the important parts of your bot.
 1. Ability to do an action on *any* kind of IRC message.
 2. NickServ and SASL support.
 3. Whatever we think of!
+
+# Footnote about the examples
+
+The examples provided are actual fully functional bots utilized by users.
+Most of them come with an autoupdater script that pulls from the repo to
+update.
+If you wish to actually utilize them, you should install the `nettirely` module in
+editable mode.
+This can be done via by running `python3 -m pip install --user -e .` in the
+main directory of the repo, or `python3 setup.py develop`.
