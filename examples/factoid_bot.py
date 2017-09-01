@@ -39,9 +39,11 @@ async def factoid_handler(self, sender, recipient, match):
     elif factoid == "quit" and sender.nick in ADMINS:
         self.running = False
     elif factoid == "np" and LASTFM_API_KEY is not None:
+        lastfm_user = args[0] if len(args) >= 1 else sender.nick
+
         resp = await asks.get("http://ws.audioscrobbler.com/2.0/", params={
             "method": "user.getrecenttracks",
-            "user": args[0] if len(args) >= 1 else sender.nick,
+            "user": lastfm_user,
             "api_key": LASTFM_API_KEY,
             "limit": "1",
         })
@@ -56,7 +58,7 @@ async def factoid_handler(self, sender, recipient, match):
             # This happens when there are no tracks returned for some reason.
             return
 
-        msg = f"{sender.nick}: {args[0]} is listening to {artist} - {title}"
+        msg = f"{sender.nick}: {lastfm_user} is listening to {artist} - {title}"
         if album:
             msg += f" (from {album})"
         await self.send_privmsg(recipient, msg)
