@@ -122,7 +122,7 @@ async def send_log(self, sender, channel):
 @bot.on_privmsg
 async def update_seen(self, sender, _channel, message):
     seen = self.state.setdefault("seen", {})
-    seen.setdefault(sender.nick, time.time())
+    seen[sender.nick] = time.time()
 
 
 @bot.on_command("!seen", 1)
