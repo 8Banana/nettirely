@@ -9,6 +9,7 @@ import datetime
 import random
 import re
 import sys
+import time
 import urllib.parse
 
 import asks
@@ -18,7 +19,9 @@ from curio import subprocess
 import autoupdater
 from nettirely import IrcBot, NO_SPLITTING
 
+TIME_AMOUNTS = ("seconds", "minutes", "hours", "days", "weeks")
 SLAP_TEMPLATE = "slaps {slappee} around a bit with {fish}"
+
 FISH = (
     "asyncio", "multiprocessing", "twisted", "django", "pathlib",
     "python 2.7", "a daemon thread",
@@ -114,6 +117,35 @@ async def send_log(self, sender, channel):
     logs = self.state["logs"]
     result = await upload_log(logs[channel])
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
+
+
+@bot.on_privmsg
+async def update_seen(self, sender, _channel, message):
+    seen = self.state.setdefault("seen", {})
+    seen.setdefault(sender.nick, time.time())
+
+
+@bot.on_command("!seen", 1)
+async def show_seen(self, sender, channel, user):
+    seen = self.state.get("seen", {})
+
+    if user in seen:
+        await self.send_privmsg(channel,
+                                f"{sender.nick}: I've never seen {user}.")
+    else:
+        when = seen[user]
+
+        for n, amount in enumerate(TIME_AMOUNTS):
+            if when < 60 ** (n + 1):
+                break
+
+        when //= 60 ** n
+        if when != 1:
+            amount += "s"
+        when = f"{when} {amount} ago"
+
+        await self.send_privmsg(channel,
+                                f"{sender.nick}: {user} was last seen {when}.")
 
 
 def _make_url(domain, what2google):
