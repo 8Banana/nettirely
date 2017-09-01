@@ -137,9 +137,16 @@ async def show_seen(self, sender, channel, user):
                 break
 
         when //= 60 ** n
+
         if when != 1:
             amount += "s"
-        when = f"{when} {amount} ago"
+
+        if when == 0:
+            when = "right now"
+        elif when < 0:
+            when = "on Thursday, 1 January 1970"
+        else:
+            when = f"{when} {amount} ago"
 
         await self.send_privmsg(channel,
                                 f"{sender.nick}: {user} was last seen {when}.")
