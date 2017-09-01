@@ -81,7 +81,7 @@ class IrcBot:
         except (ValueError, FileNotFoundError):
             self.state = {}
 
-        atexit.register(self._save_state)
+        atexit.register(self._on_exit)
 
         self._connection_callbacks = []
         self._disconnection_callbacks = []
@@ -90,15 +90,22 @@ class IrcBot:
         self._command_callbacks = {}
         self._regexp_callbacks = {}
 
-    def _save_state(self):
+    def _on_exit(self):
         # We're in a weird place here, so I made the design decision to only
         # allow non-coroutines.
         # It would've been possible to also allow coroutines, however that
         # would involve creating a new curio Kernel.
-
         for callback in self._disconnection_callbacks:
             callback(self)
 
+        self.save_state()
+
+    def save_state(self):
+        """
+        Save the bot's state to a json file.
+
+        This method is only safe if all the state is JSON encodeable.
+        """
         with open(self.state_path, "w") as f:
             json.dump(self.state, f)
 

@@ -26,6 +26,7 @@ async def factoid_handler(self, sender, recipient, match):
         factoids[args[0]] = " ".join(args[1:])
         await self.send_privmsg(recipient,
                                 f"{nick}: Defined factoid {args[0]!r}")
+        await curio.run_in_thread(self.save_state)
     elif factoid == "factoids":
         await self.send_privmsg(recipient,
                                 " ".join(bot.state.get(factoid, {})))
