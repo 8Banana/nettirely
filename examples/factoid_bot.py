@@ -38,10 +38,10 @@ async def factoid_handler(self, sender, recipient, match):
         await self.join_channel(args[0])
     elif factoid == "quit" and sender.nick in ADMINS:
         self.running = False
-    elif factoid == "np" and len(args) >= 1 and LASTFM_API_KEY is not None:
+    elif factoid == "np" and LASTFM_API_KEY is not None:
         resp = await asks.get("http://ws.audioscrobbler.com/2.0/", params={
             "method": "user.getrecenttracks",
-            "user": args[0],
+            "user": args[0] if len(args) >= 1 else sender.nick,
             "api_key": LASTFM_API_KEY,
             "limit": "1",
         })
