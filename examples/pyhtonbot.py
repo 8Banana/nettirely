@@ -19,7 +19,7 @@ from curio import subprocess
 import autoupdater
 from nettirely import IrcBot, NO_SPLITTING
 
-TIME_AMOUNTS = ("seconds", "minutes", "hours", "days", "weeks")
+TIME_AMOUNTS = ("second", "minute", "hour")
 SLAP_TEMPLATE = "slaps {slappee} around a bit with {fish}"
 
 FISH = (
@@ -129,8 +129,8 @@ async def update_seen(self, sender, _channel, message):
 async def show_seen(self, sender, channel, user):
     seen = self.state.get("seen", {})
 
-    if user in seen::
-        when = seen[user]
+    if user in seen:
+        when = time.time() - seen[user]
 
         for n, amount in enumerate(TIME_AMOUNTS):
             if when < 60 ** (n + 1):
