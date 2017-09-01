@@ -129,10 +129,7 @@ async def update_seen(self, sender, _channel, message):
 async def show_seen(self, sender, channel, user):
     seen = self.state.get("seen", {})
 
-    if user in seen:
-        await self.send_privmsg(channel,
-                                f"{sender.nick}: I've never seen {user}.")
-    else:
+    if user in seen::
         when = seen[user]
 
         for n, amount in enumerate(TIME_AMOUNTS):
@@ -146,6 +143,9 @@ async def show_seen(self, sender, channel, user):
 
         await self.send_privmsg(channel,
                                 f"{sender.nick}: {user} was last seen {when}.")
+    else:
+        await self.send_privmsg(channel,
+                                f"{sender.nick}: I've never seen {user}.")
 
 
 def _make_url(domain, what2google):
