@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # A simple script that allows you to update an IRC bot remotely without needing
 # to manually restart it.
 
