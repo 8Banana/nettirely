@@ -56,4 +56,4 @@ def restart():
 
 
 def initialize():
-    threading.Thread(target=_worker).start()
+    threading.Thread(target=_worker, daemon=True).start()
