@@ -2,7 +2,6 @@
 # to manually restart it.
 
 import atexit
-import inspect
 import os
 import subprocess
 import sys
@@ -53,15 +52,8 @@ def restart():
         # this is our kind-of CPython hack.
         atexit._run_exitfuncs()
 
-    os.execlp(sys.executable, sys.executable, filepath)
+    os.execvp(sys.executable, [sys.executable] + sys.argv)
 
 
 def initialize():
-    # TODO: Not use globals.
-    global filepath
-
-    # Initialize the auto-updater. Must be called in the main script.
-    parent_globals = inspect.currentframe().f_back.f_globals
-    assert parent_globals["__name__"] == "__main__"
-    filepath = parent_globals["__file__"]
-    threading.Thread(target=_worker).start()
+    threading.Thread(target=_worker, daemon=True).start()
