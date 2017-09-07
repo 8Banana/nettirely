@@ -1,0 +1,1 @@
+asks>=1.2.1 # for pyhtonbot; asks.init() introduced in 1.2.1

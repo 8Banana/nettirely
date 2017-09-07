@@ -240,7 +240,6 @@ async def bot_reload(_self, sender, _recipient, _args):
 
 def _add_canned_response(self, limiter, regexp, response):
     async def _canned_response(inner_self, _sender, recipient, _match):
-        # TODO: Can we support things like \1 in the response?
         if "*" in limiter or recipient in limiter:
             await inner_self.send_privmsg(recipient, response)
     self.on_regexp(regexp)(_canned_response)
