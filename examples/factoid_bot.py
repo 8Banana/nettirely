@@ -18,7 +18,7 @@ async def factoid_handler(self, sender, recipient, match):
     nick = sender.nick
     admins = bot.state.setdefault("admins", ["tycoon177", "darkf", "__Myst__"])
     lastfm_api_key = bot.state.setdefault("lastfm_api_key", None)
-    factoids = bot.state.setdefault("factoids", None)
+    factoids = bot.state.setdefault("factoids", {})
 
     if factoid == "defact" and len(args) >= 1:
         factoids[args[0]] = " ".join(args[1:])
