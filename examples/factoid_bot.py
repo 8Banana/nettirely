@@ -8,10 +8,6 @@ import curio
 import autoupdater
 from nettirely import IrcBot
 
-# Change this to your API key if you want the $np functionality.
-LASTFM_API_KEY = None
-ADMINS = {"darkf", "__Myst__"}
-
 bot = IrcBot(state_path="factoid_state.json")
 
 
@@ -20,32 +16,63 @@ async def factoid_handler(self, sender, recipient, match):
     factoid = match.group(1)
     args = match.group(2).split() if match.group(2) else []
     nick = sender.nick
+    admins = bot.state.setdefault("admins", ["tycoon177", "darkf", "__Myst__"])
+    lastfm_api_key = bot.state.setdefault("lastfm_api_key", None)
+    factoids = bot.state.setdefault("factoids", {})
 
     if factoid == "defact" and len(args) >= 1:
-        factoids = bot.state.setdefault("factoids", {})
         factoids[args[0]] = " ".join(args[1:])
         await self.send_privmsg(recipient,
                                 f"{nick}: Defined factoid {args[0]!r}")
+        await curio.run_in_thread(self.save_state)
+    elif factoid == "delfact" and len(args) >= 1:
+        factoids = bot.state.setdefault("factoids", {})
+        if factoids.pop(args[0], None) is not None:
+            await self.send_privmsg(recipient, f"{nick}: Removed factoid {args[0]!r}")
+            await curio.run_in_thread(self.save_state)
+        else:
+            await self.send_privmsg(recipient, f"{nick}: No such factoid exists")
+    elif factoid == "defadmin" and nick in admins and len(args) >= 1:
+        for user in args:
+            if user not in admins:
+                admins.append(user)
+        users = ", ".join(args)
+        await self.send_privmsg(recipient,
+                                f"{nick}: Added admins {users}")
+        await curio.run_in_thread(self.save_state)
+    elif factoid == "deladmin" and nick in admins and len(args) >= 1:
+        for user in args:
+            try:
+                admins.remove(user)
+            except ValueError:
+                pass
+        users = ", ".join(args)
+        await self.send_privmsg(recipient,
+                                f"{nick}: Removed admins {users}")
+        await curio.run_in_thread(self.save_state)
+    elif factoid == "setapikey" and nick in admins and len(args) >= 1:
+        bot.state["lastfm_api_key"] = args[0]
+        await self.send_privmsg(recipient,
+                                f"{nick}: lastfm api key updated")
         await curio.run_in_thread(self.save_state)
     elif factoid == "factoids":
         await self.send_privmsg(recipient,
                                 " ".join(bot.state.get(factoid, {})))
     elif factoid == "at" and len(args) >= 2:
-        factoids = bot.state.get("factoids", {})
         if args[1] in factoids:
             await self.send_privmsg(recipient,
                                     f"{args[0]}: {factoids[args[1]]}")
-    elif factoid == "join" and len(args) >= 1 and sender.nick in ADMINS:
+    elif factoid == "join" and len(args) >= 1 and sender.nick in admins:
         await self.join_channel(args[0])
-    elif factoid == "quit" and sender.nick in ADMINS:
+    elif factoid == "quit" and sender.nick in admins:
         self.running = False
-    elif factoid == "np" and LASTFM_API_KEY is not None:
+    elif factoid == "np" and lastfm_api_key is not None:
         lastfm_user = args[0] if len(args) >= 1 else sender.nick
 
         resp = await asks.get("http://ws.audioscrobbler.com/2.0/", params={
             "method": "user.getrecenttracks",
             "user": lastfm_user,
-            "api_key": LASTFM_API_KEY,
+            "api_key": lastfm_api_key,
             "limit": "1",
         })
 
