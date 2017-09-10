@@ -42,8 +42,10 @@ async def factoid_handler(self, sender, recipient, match):
         await curio.run_in_thread(self.save_state)
     elif factoid == "deladmin" and nick in admins and len(args) >= 1:
         for user in args:
-            if user in admins:
+            try:
                 admins.remove(user)
+            except ValueError:
+                pass
         users = ", ".join(args)
         await self.send_privmsg(recipient,
                                 f"{nick}: Removed admins {users}")
