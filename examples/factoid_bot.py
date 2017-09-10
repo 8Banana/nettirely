@@ -25,6 +25,13 @@ async def factoid_handler(self, sender, recipient, match):
         await self.send_privmsg(recipient,
                                 f"{nick}: Defined factoid {args[0]!r}")
         await curio.run_in_thread(self.save_state)
+    elif factoid == "delfact" and len(args) >= 1:
+        factoids = bot.state.setdefault("factoids", {})
+        if factoids.pop(args[0], None) is not None:
+            await self.send_privmsg(recipient, f"{nick}: Removed factoid {args[0]!r}")
+            await curio.run_in_thread(self.save_state)
+        else:
+            await self.send_privmsg(recipient, f"{nick}: No such factoid exists")
     elif factoid == "deadmin" and nick in admins and len(args) >= 1:
         for user in args:
             if user not in admins:
