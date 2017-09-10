@@ -102,6 +102,9 @@ async def factoid_handler(self, sender, recipient, match):
         if album:
             msg += f" (from {album})"
         await self.send_privmsg(recipient, msg)
+    elif factoid == "update" and nick in admins:
+        with autoupdater.update_condition:
+            autoupdater.update_condition.notify_all()
     else:
         factoids = bot.state.get("factoids", {})
         if factoid in factoids:
