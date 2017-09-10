@@ -11,6 +11,15 @@ from nettirely import IrcBot
 bot = IrcBot(state_path="factoid_state.json")
 
 
+async def create_termbin(contents):
+    socket = await curio.open_connection("termbin.com", 9999)
+
+    async with socket:
+        await socket.sendall(contents)
+        url = await socket.recv(4096)
+        return url.decode("utf-8").strip()
+
+
 @bot.on_regexp(r"^\$(\S+)(?:\s*(.+))?")
 async def factoid_handler(self, sender, recipient, match):
     factoid = match.group(1)
@@ -56,8 +65,11 @@ async def factoid_handler(self, sender, recipient, match):
                                 f"{nick}: lastfm api key updated")
         await curio.run_in_thread(self.save_state)
     elif factoid == "factoids":
-        await self.send_privmsg(recipient,
-                                " ".join(bot.state.get(factoid, {})))
+        url = await create_termbin(" ".join(factoids))
+        await self.send_privmsg(recipient, url)
+    elif factoid == "admins":
+        url = await create_termbin(" ".join(admins))
+        await self.send_privmsg(recipient, url)
     elif factoid == "at" and len(args) >= 2:
         if args[1] in factoids:
             await self.send_privmsg(recipient,
