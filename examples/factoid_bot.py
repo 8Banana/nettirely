@@ -32,7 +32,7 @@ async def factoid_handler(self, sender, recipient, match):
             await curio.run_in_thread(self.save_state)
         else:
             await self.send_privmsg(recipient, f"{nick}: No such factoid exists")
-    elif factoid == "deadmin" and nick in admins and len(args) >= 1:
+    elif factoid == "defadmin" and nick in admins and len(args) >= 1:
         for user in args:
             if user not in admins:
                 admins.append(user)
