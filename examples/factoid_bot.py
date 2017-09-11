@@ -12,6 +12,9 @@ bot = IrcBot(state_path="factoid_state.json")
 
 
 async def create_termbin(contents):
+    if isinstance(contents, str):
+        contents = contents.encode("utf-8")
+
     socket = await curio.open_connection("termbin.com", 9999)
 
     async with socket:
