@@ -25,6 +25,7 @@ SLAP_TEMPLATE = "slaps {slappee} around a bit with {fish}"
 FISH = (
     "asyncio", "multiprocessing", "twisted", "django", "pathlib",
     "python 2.7", "a daemon thread", "unittest", "logging",
+    "xml.parsers.expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE",
     "urllib.request.HTTPPasswordMgrWithDefaultRealm", "javascript",
 )
 ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
