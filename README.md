@@ -43,7 +43,7 @@ For example, you can interact with an HTTP REST API using the [asks library](htt
 The core of `nettirely` is the IrcBot class.
 All of its methods are throughly documented, or are pretty much
 self-explanatory.
-You can look at the example given above or at [pyhtonbot](github.com/8Banana/pythonbot) to see some examples of nettirely's power.
+You can look at the example given above or at [pyhtonbot](https://github.com/8Banana/nettirely/blob/master/examples/pyhtonbot.py) to see some examples of nettirely's power.
 
 # Reasoning
 
