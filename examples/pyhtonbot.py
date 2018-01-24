@@ -19,16 +19,24 @@ from curio import subprocess
 import autoupdater
 from nettirely import IrcBot, NO_SPLITTING
 
-TIME_AMOUNTS = ("second", "minute", "hour")
-SLAP_TEMPLATE = "slaps {slappee} around a bit with {fish}"
+# General bot constants
+ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
 
+# Last seen constants
+TIME_AMOUNTS = ("second", "minute", "hour")
+
+# Fish slapper constants
+SLAP_TEMPLATE = "slaps {slappee} around a bit with {fish}"
 FISH = (
     "asyncio", "multiprocessing", "twisted", "django", "pathlib",
     "python 2.7", "a daemon thread", "unittest", "logging",
     "xml.parsers.expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE",
     "urllib.request.HTTPPasswordMgrWithDefaultRealm", "javascript",
 )
-ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
+
+# Markov chain constants
+EMPTY_WORD = "__EMPTY__"
+PRECEDING_WORDS = 2
 
 bot = IrcBot(state_path="pyhtonbot_state.json")
 
@@ -119,6 +127,68 @@ async def send_log(self, sender, channel):
     logs = self.state["logs"]
     result = await upload_log(logs[channel])
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
+
+
+def _pick_word(word_frequenciesb):
+    population = []
+    weights = []
+
+    for word, frequency in word_frequencies.items():
+        population.append(word)
+        weights.append(frequency)
+
+    return random.choices(population, weights)[0]
+
+
+def _train_markov_chain(markov_chain, text):
+    words = \
+        [EMPTY_WORD] * PRECEDING_WORDS + \
+        text.split() + \
+        [EMPTY_WORD] * PRECEDING_WORDS
+
+    for i in range(0, len(words) - PRECEDING_WORDS - 1):
+        *preceding, word = words[i:i+PRECEDING_WORDS+1]
+
+        prefix = markov_chain.setdefault(tuple(preceding), {})
+        prefix[word] = prefix.get(word, 0) + 1
+
+
+def _reconstruct_text(markov_chain):
+    words = [EMPTY_WORD] * PRECEDING_WORDS
+    result = []
+
+    while True:
+        word = _pick_word(markov_chain[tuple(words)])
+
+        if word == EMPTY_WORD:
+            break
+
+        result.append(word)
+        words = words[1:]
+        words.append(word)
+
+    return " ".join(result)
+
+@bot.on_privmsg
+async def update_markov_chain(self, sender, _channel, message):
+    markov_chains = self.state.setdefault("markov_chains", {})
+    markov_chain = markov_chains.setdefault(sender.nick, {})
+    _train_markov_chain(markov_chain, message)
+
+
+@bot.on_command("!parrot", 1)
+async def parrot(self, sender, channel, user):
+    markov_chains = self.state.setdefault("markov_chains", {})
+    markov_chain = markov_chains.setdefault(sender.nick, {})
+
+    if markov_chain:
+        mimic = _reconstruct_text(markov_chain)
+
+        await self.send_privmsg(channel,
+                                f"{sender.nick}: {mimic}")
+    else:
+        await self.send_privmsg(channel,
+                                f"{sender.nick}: I don't know how to parrot {user}.")
 
 
 @bot.on_privmsg
@@ -229,6 +299,7 @@ async def update(_self, sender, _recipient, _args):
 
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
+
 
 @bot.on_command("!reload", NO_SPLITTING)
 async def bot_reload(_self, sender, _recipient, _args):
