@@ -129,7 +129,7 @@ async def send_log(self, sender, channel):
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
 
 
-def _pick_word(word_frequenciesb):
+def _pick_word(word_frequencies):
     population = []
     weights = []
 
