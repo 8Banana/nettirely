@@ -179,7 +179,7 @@ async def update_markov_chain(self, sender, _channel, message):
 @bot.on_command("!parrot", 1)
 async def parrot(self, sender, channel, user):
     markov_chains = self.state.setdefault("markov_chains", {})
-    markov_chain = markov_chains.setdefault(sender.nick, {})
+    markov_chain = markov_chains.setdefault(user, {})
 
     if markov_chain:
         mimic = _reconstruct_text(markov_chain)
