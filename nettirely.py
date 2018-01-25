@@ -4,6 +4,7 @@ import inspect
 import json
 import os
 import re
+import shutil
 
 import curio
 from curio import socket
@@ -105,8 +106,12 @@ class IrcBot:
 
         This method is only safe if all the state is JSON encodeable.
         """
-        with open(self.state_path, "w") as f:
+        with open(self.state_path + ".tmp", "w") as f:
             json.dump(self.state, f)
+            f.flush()
+            os.fsync(f.fileno())
+
+        os.rename(self.state_path + ".tmp", self.state_path)
 
     async def _send(self, *parts):
         data = " ".join(parts).encode(self.encoding) + b"\r\n"
