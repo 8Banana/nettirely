@@ -124,6 +124,7 @@ class IrcBot:
 
             lines = data.decode(self.encoding, errors='replace').split("\r\n")
             self._linebuffer.extend(lines)
+
         return self._linebuffer.popleft()
 
     @staticmethod
@@ -170,6 +171,8 @@ class IrcBot:
                 break
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
                 raise ValueError(f"The nickname {self.nick!r} is already used")
+            elif msg.command == "432":  # ERR_ERRONEUSNICKNAME
+                raise ValueError(f"The nickname {self.nick!r} is erroneous")
 
         async with curio.TaskGroup() as g:
             for callback in self._connection_callbacks:

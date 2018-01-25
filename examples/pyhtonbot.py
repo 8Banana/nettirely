@@ -37,6 +37,7 @@ FISH = (
 # Markov chain constants
 EMPTY_WORD = "__EMPTY__"
 PRECEDING_WORDS = 2
+JSON_TUPLE_SEPARATOR = "\0"
 
 bot = IrcBot(state_path="pyhtonbot_state.json")
 
@@ -140,6 +141,19 @@ def _pick_word(word_frequencies):
     return random.choices(population, weights)[0]
 
 
+@bot.on_connect
+async def initialize_markov_chains(self):
+    # These two methods are what I like to call "unholy."
+    self.state["markov_chains"] = {user: {k.split(JSON_TUPLE_SEPARATOR): v for k, v in chain.items()}
+                                   for user, chain in self.state.get("markov_chains", {}).items()}
+
+
+@bot.on_disconnect
+def save_markov_chains(self):
+    self.state["markov_chains"] = {user: {JSON_TUPLE_SEPARATOR.join(k): v for k, v in chain.items()}
+                                   for user, chain in self.state.get("markov_chains", {}).items()}
+
+
 def _train_markov_chain(markov_chain, text):
     words = \
         [EMPTY_WORD] * PRECEDING_WORDS + \
@@ -150,6 +164,10 @@ def _train_markov_chain(markov_chain, text):
         *preceding, word = words[i:i+PRECEDING_WORDS+1]
 
         prefix = markov_chain.setdefault(tuple(preceding), {})
+
+        if JSON_TUPLE_SEPARATOR in word:
+            continue
+
         prefix[word] = prefix.get(word, 0) + 1
 
 
