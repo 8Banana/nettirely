@@ -144,7 +144,7 @@ def _pick_word(word_frequencies):
 @bot.on_connect
 async def initialize_markov_chains(self):
     # These two methods are what I like to call "unholy."
-    self.state["markov_chains"] = {user: {k.split(JSON_TUPLE_SEPARATOR): v for k, v in chain.items()}
+    self.state["markov_chains"] = {user: {tuple(k.split(JSON_TUPLE_SEPARATOR)): v for k, v in chain.items()}
                                    for user, chain in self.state.get("markov_chains", {}).items()}
 
 
