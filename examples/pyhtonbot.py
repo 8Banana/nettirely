@@ -43,7 +43,7 @@ bot = IrcBot(state_path="pyhtonbot_state.json")
 
 
 @bot.on_command(">>>", NO_SPLITTING)
-@bot.on_command("!py3", NO_SPLITTING)
+@bot.on_command("!py", NO_SPLITTING)
 async def annoy_raylu(self, _, recipient, text):
     if recipient == self.nick:
         return
