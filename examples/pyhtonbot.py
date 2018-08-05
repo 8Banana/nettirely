@@ -320,6 +320,14 @@ async def update(_self, sender, _recipient, _args):
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
 
+@bot.on_command("!commit", NO_SPLITTING)
+async def commit(self, _sender, recipient, _args):
+    info = (await subprocess.check_output(['git', 'log', '-1', '--pretty=%ai\t%B'])).decode('utf-8')
+    update_time, commit_message = info.split("\t", 1)
+    commit_summary = commit_message.splitlines()[0]
+
+    await bot.send_privmsg(recipient, f"Updated at {update_time}: {commit_summary!r}")
+
 
 @bot.on_command("!reload", NO_SPLITTING)
 async def bot_reload(_self, sender, _recipient, _args):
@@ -437,15 +445,6 @@ async def main():
         await bot.join_channel("##learnpython")
         await bot.join_channel("#lpmc")
         await bot.join_channel("#learnprogramming")
-
-    # this only sent to #8banana
-#    info = (await subprocess.check_output(
-#        ['git', 'log', '-1', '--pretty=%ai\t%B'])).decode('utf-8')
-#    update_time, commit_message = info.split("\t", 1)
-#    commit_summary = commit_message.splitlines()[0]
-#
-#    await bot.send_privmsg("#8banana",
-#                           f"Updated at {update_time}: {commit_summary!r}")
 
     while True:
         try:
