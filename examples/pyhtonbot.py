@@ -411,6 +411,18 @@ async def cans(self, sender, recipient, *_):
         await curio.sleep(1 / 10)  # 10 cans per second.
 
 
+FREENODE_SPAM_PREFIX = (
+    'After the acquisition by Private Internet Access, Freenode is now being '
+    'used to push ICO scams ')
+
+
+@bot.on_privmsg
+async def kick_spammers(self, sender, channel, message):
+    if message.startswith(FREENODE_SPAM_PREFIX):
+        # TODO: add a kick() method to nettirely.IrcBot
+        await self._send('KICK', channel, sender.nick, ":spamming detected")
+
+
 async def main():
     asks.init("curio")
     autoupdater.initialize()
