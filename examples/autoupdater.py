@@ -16,16 +16,28 @@ filepath = None
 
 
 def _get_output(args):
-    process = subprocess.run(args,
-                             stdout=subprocess.PIPE)
-    assert process.returncode == 0
-    return process.stdout.decode("ascii").strip()
+    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if process.returncode == 0:
+        return process.stdout.decode("ascii").strip()
+    else:
+        pid = os.getpid()
+
+        with open("stdout.%d.log" % pid, "wb") as f:
+            f.write(process.stdout)
+
+        with open("stderr.%d.log" % pid, "wb") as f:
+            f.write(process.stderr)
+
+        raise RuntimeError(("There was an error while running the command %r."
+                           "You can find stdout & stderr in the current working directory. (PID %d)") % (args, pid))
+
 
 
 def _worker():
     remote = "origin"
     branch = _get_output(["git", "symbolic-ref", "--short", "HEAD"])
-    commit_hash = _get_output(["git", "rev-parse", "HEAD"])
+    current_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
 
     while True:
         command = subprocess.run(["git", "pull", remote, branch],
@@ -35,7 +47,7 @@ def _worker():
         if command.returncode == 0:
             new_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
 
-            if new_commit_hash != commit_hash:
+            if new_commit_hash != current_commit_hash:
                 restart()
 
         with update_condition:

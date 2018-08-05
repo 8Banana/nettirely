@@ -10,6 +10,7 @@ import random
 import re
 import sys
 import time
+import traceback
 import urllib.parse
 
 import asks
@@ -449,7 +450,8 @@ async def main():
     while True:
         try:
             await bot.mainloop()
-        except OSError:
+        except BaseException:
+            traceback.print_exc()
             autoupdater.restart()
 
 if __name__ == "__main__":
