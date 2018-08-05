@@ -9,9 +9,9 @@ sudo: false
 cache: pip
 
 install:
-  - ./setup.py install
-  - pip install --quiet --requirement examples/requirements.txt
-  - pip install --quiet pylint
+  - pip install .
+  - pip install -r examples/requirements.txt
+  - pip install pylint
 
 script:
   - python3 -m unittest --verbose
@@ -29,3 +29,7 @@ notifications:
     on_failure: always
     template:
       - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message} %{build_url}'
+
+matrix:
+  allows_failures:
+    - python: 'nightly'
