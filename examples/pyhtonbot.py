@@ -427,8 +427,7 @@ FREENODE_SPAM_PREFIX = (
 @bot.on_privmsg
 async def kick_spammers(self, sender, channel, message):
     if message.startswith(FREENODE_SPAM_PREFIX):
-        # TODO: add a kick() method to nettirely.IrcBot
-        await self._send('KICK', channel, sender.nick, ":spamming detected")
+        await self.kick(channel, sender.nick, "spamming detected")
 
 
 async def main():

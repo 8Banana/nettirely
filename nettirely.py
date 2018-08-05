@@ -4,7 +4,6 @@ import inspect
 import json
 import os
 import re
-import shutil
 
 import curio
 from curio import socket
@@ -186,6 +185,9 @@ class IrcBot:
 
     async def join_channel(self, channel):
         await self._send("JOIN", channel)
+
+    async def kick(self, channel, nickname, reason):
+        await self._send("KICK", channel, nickname, ":" + reason)
 
     async def send_notice(self, recipient, text):
         await self._send("NOTICE", recipient, ":" + text)
