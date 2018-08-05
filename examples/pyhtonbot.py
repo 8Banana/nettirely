@@ -438,13 +438,13 @@ async def main():
         await bot.join_channel("#learnprogramming")
 
     # this only sent to #8banana
-    info = (await subprocess.check_output(
-        ['git', 'log', '-1', '--pretty=%ai\t%B'])).decode('utf-8')
-    update_time, commit_message = info.split("\t", 1)
-    commit_summary = commit_message.splitlines()[0]
-
-    await bot.send_privmsg("#8banana",
-                           f"Updated at {update_time}: {commit_summary!r}")
+#    info = (await subprocess.check_output(
+#        ['git', 'log', '-1', '--pretty=%ai\t%B'])).decode('utf-8')
+#    update_time, commit_message = info.split("\t", 1)
+#    commit_summary = commit_message.splitlines()[0]
+#
+#    await bot.send_privmsg("#8banana",
+#                           f"Updated at {update_time}: {commit_summary!r}")
 
     while True:
         try:
