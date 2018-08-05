@@ -7,12 +7,9 @@ import subprocess
 import sys
 import threading
 
-# This interval is 10 minutes because it's fun to see your updates come out
-# when you want them to.
-INTERVAL = int(1 * 60 * 10)  # seconds
-update_condition = threading.Condition()
+INTERVAL = 1 * 60 * 10  # 10 minutes
 
-filepath = None
+_force_update_event = threading.Event()
 
 
 def _get_output(args):
@@ -33,27 +30,6 @@ def _get_output(args):
                            "You can find stdout & stderr in the current working directory. (PID %d)") % (args, pid))
 
 
-
-def _worker():
-    remote = "origin"
-    branch = _get_output(["git", "symbolic-ref", "--short", "HEAD"])
-    current_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
-
-    while True:
-        command = subprocess.run(["git", "pull", remote, branch],
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL)
-
-        if command.returncode == 0:
-            new_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
-
-            if new_commit_hash != current_commit_hash:
-                restart()
-
-        with update_condition:
-            update_condition.wait(INTERVAL)
-
-
 def restart():
     if hasattr(atexit, "_run_exitfuncs"):
         # We're about to leave in a way that's not expected by
@@ -67,5 +43,31 @@ def restart():
     os.execvp(sys.executable, [sys.executable] + sys.argv)
 
 
+def update():
+    _force_update_event.set()
+
+
 def initialize():
-    threading.Thread(target=_worker, daemon=True).start()
+    def check_for_updates():
+        remote = "origin"
+        branch = _get_output(["git", "symbolic-ref", "--short", "HEAD"])
+        current_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
+
+        while True:
+            command = subprocess.run(["git", "pull", remote, branch],
+                                     stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.DEVNULL)
+
+            if command.returncode == 0:
+                new_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
+
+                if new_commit_hash != current_commit_hash:
+                    restart()
+
+            # This line sleeps until one of the following two conditions:
+            #  1. INTERVAL seconds pass.
+            #  2. Somebody sets _force_update_event.
+            _force_update_event.wait(INTERVAL)
+            _force_update_event.clear()
+
+    threading.Thread(target=check_for_updates, daemon=True).start()

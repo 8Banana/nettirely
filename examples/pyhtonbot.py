@@ -314,8 +314,7 @@ async def autolog_send(self, sender, channel):
 @bot.on_command("!update", NO_SPLITTING)
 async def update(_self, sender, _recipient, _args):
     def worker():
-        with autoupdater.update_condition:
-            autoupdater.update_condition.notify_all()
+        autoupdater.update()
 
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
