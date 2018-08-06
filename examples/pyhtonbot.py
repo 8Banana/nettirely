@@ -124,12 +124,48 @@ async def append_privmsg_to_log(self, sender, channel, message):
 
 @bot.on_command("!log", 0)
 async def send_log(self, sender, channel):
-
     msg = f"{sender.nick}: Uploading logs, this might take a second..."
     await self.send_privmsg(channel, msg)
     logs = self.state["logs"]
     result = await upload_log(logs[channel])
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
+
+
+FREENODE_SPAM_PREFIXES = (
+    'After the acquisition by Private Internet Access, Freenode is now being '
+    'used to push ICO scams ',
+    'Christel just posted this "denial" on the freenode')
+
+
+@bot.on_connect
+async def initialize_spammer_database(self):
+    self.state.setdefault("spammer_prefixes", FREENODE_SPAM_PREFIXES)
+
+
+@bot.on_command("!addspammer", 1)
+async def add_spammer(self, sender, source, spammer_nickname):
+    first_spammer_message = ...
+    self.state["spammer_prefixes"].append(first_spammer_message)
+
+
+@bot.on_command("!addspamprefix", NO_SPLITTING)
+async def add_spam_prefix(self, sender, source, spam_prefix):
+    self.state["spammer_prefixes"].append(spam_prefix)
+
+
+@bot.on_privmsg
+async def kick_spammers(self, sender, channel, message):
+    for spam_pattern in self.state["spammer_prefixes"]:
+        if message.startswith(spam_pattern):
+            await self.kick(channel, sender.nick, "spamming detected")
+
+
+@bot.on_command("!prefixes", 0)
+async def send_prefixes(self, sender, source):
+    await self.send_privmsg(source, f"Sending the prefixes as a PM to {sender.nick} ...")
+
+    for index, prefix in enumerate(self.state["spammer_prefixes"]):
+        await self.send_privmsg(sender.nick, f"{index + 1}. {prefix!r}")
 
 
 def _pick_word(word_frequencies):
@@ -417,19 +453,6 @@ async def cans(self, sender, recipient, *_):
         await self.send_privmsg(sender.nick,
                                 f"{regexp!r} -> {response!r}")
         await curio.sleep(1 / 10)  # 10 cans per second.
-
-
-FREENODE_SPAM_PREFIXES = (
-    'After the acquisition by Private Internet Access, Freenode is now being '
-    'used to push ICO scams ',
-    'Christel just posted this "denial" on the freenode')
-
-
-@bot.on_privmsg
-async def kick_spammers(self, sender, channel, message):
-    for spam_pattern in FREENODE_SPAM_PREFIXES:
-        if message.startswith(spam_pattern):
-            await self.kick(channel, sender.nick, "spamming detected")
 
 
 async def main():
