@@ -144,7 +144,18 @@ async def initialize_spammer_database(self):
 
 @bot.on_command("!addspammer", 1)
 async def add_spammer(self, sender, source, spammer_nickname):
-    first_spammer_message = ...
+    source_logs = self.state["logs"][source]
+    for line in source_logs:
+        if " <" in line and " >" in line:
+            nickname, message = line.split(" <", 1)[1].split("> ", 1)
+            if nickname == spammer_nickname:
+                first_spammer_message = message
+                break
+    else:  # no break
+        await self.send_privmsg(source, f"Could not find a first message for {spammer_nickname!r}")
+        return
+
+    await self.send_privmsg(source, f"Added {first_spammer_message!r} as a prefix.")
     self.state["spammer_prefixes"].append(first_spammer_message)
 
 
