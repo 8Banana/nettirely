@@ -124,12 +124,65 @@ async def append_privmsg_to_log(self, sender, channel, message):
 
 @bot.on_command("!log", 0)
 async def send_log(self, sender, channel):
-
     msg = f"{sender.nick}: Uploading logs, this might take a second..."
     await self.send_privmsg(channel, msg)
     logs = self.state["logs"]
     result = await upload_log(logs[channel])
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
+
+
+FREENODE_SPAM_PREFIXES = (
+    'After the acquisition by Private Internet Access, Freenode is now being '
+    'used to push ICO scams ',
+    'Christel just posted this "denial" on the freenode')
+
+
+@bot.on_connect
+async def initialize_spammer_database(self):
+    self.state.setdefault("spammer_prefixes", FREENODE_SPAM_PREFIXES)
+
+
+@bot.on_command("!addspammer", 1)
+async def add_spammer(self, sender, source, spammer_nickname):
+    source_logs = self.state["logs"][source]
+    for line in source_logs:
+        if " <" in line and " >" in line:
+            nickname, message = line.split(" <", 1)[1].split("> ", 1)
+            if nickname == spammer_nickname:
+                first_spammer_message = message
+                break
+    else:  # no break
+        await self.send_privmsg(source, f"Could not find a first message for {spammer_nickname!r}")
+        return
+
+    await self.send_privmsg(source, f"Added {first_spammer_message!r} as a prefix.")
+    self.state["spammer_prefixes"].append(first_spammer_message)
+
+
+@bot.on_command("!addspamprefix", NO_SPLITTING)
+async def add_spam_prefix(self, sender, source, spam_prefix):
+    self.state["spammer_prefixes"].append(spam_prefix)
+
+
+@bot.on_command("!removespamprefix", NO_SPLITTING)
+async def remove_spam_prefix(self, sender, source, spam_prefix):
+    try:
+        self.state["spammer_prefixes"].remove(spam_prefix)
+    except ValueError:
+        pass
+
+
+@bot.on_privmsg
+async def kick_spammers(self, sender, channel, message):
+    for spam_pattern in self.state["spammer_prefixes"]:
+        if message.startswith(spam_pattern):
+            await self.kick(channel, sender.nick, "spamming detected")
+
+
+@bot.on_command("!prefixes", NO_SPLITTING)
+async def send_prefixes(self, sender, source, _):
+    for index, prefix in enumerate(self.state["spammer_prefixes"]):
+        await self.send_privmsg(source, f"{index + 1}. {prefix!r}")
 
 
 def _pick_word(word_frequencies):
