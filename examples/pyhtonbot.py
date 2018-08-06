@@ -419,15 +419,17 @@ async def cans(self, sender, recipient, *_):
         await curio.sleep(1 / 10)  # 10 cans per second.
 
 
-FREENODE_SPAM_PREFIX = (
+FREENODE_SPAM_PREFIXES = (
     'After the acquisition by Private Internet Access, Freenode is now being '
-    'used to push ICO scams ')
+    'used to push ICO scams ',
+    'Christel just posted this "denial" on the freenode')
 
 
 @bot.on_privmsg
 async def kick_spammers(self, sender, channel, message):
-    if message.startswith(FREENODE_SPAM_PREFIX):
-        await self.kick(channel, sender.nick, "spamming detected")
+    for spam_pattern in FREENODE_SPAM_PREFIXES:
+        if message.startswith(spam_pattern):
+            await self.kick(channel, sender.nick, "spamming detected")
 
 
 async def main():
