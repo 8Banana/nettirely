@@ -22,6 +22,8 @@ from nettirely import IrcBot, NO_SPLITTING
 
 # General bot constants
 ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
+TRUSTED = {'marky1991', 'darkf', 'go|dfish', 'stuzz'}
+COMBINED_USERS = ADMINS | TRUSTED
 
 # Last seen constants
 TIME_AMOUNTS = ("second", "minute", "hour")
@@ -131,12 +133,6 @@ async def send_log(self, sender, channel):
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
 
 
-FREENODE_SPAM_PREFIXES = (
-    'After the acquisition by Private Internet Access, Freenode is now being '
-    'used to push ICO scams ',
-    'Christel just posted this "denial" on the freenode')
-
-
 @bot.on_connect
 async def initialize_spammer_database(self):
     self.state.setdefault("spammer_prefixes", FREENODE_SPAM_PREFIXES)
@@ -161,13 +157,15 @@ async def add_spammer(self, sender, source, spammer_nickname):
 
 @bot.on_command("!addspamprefix", NO_SPLITTING)
 async def add_spam_prefix(self, sender, source, spam_prefix):
-    self.state["spammer_prefixes"].append(spam_prefix)
+    if sender.nick in COMBINED_USERS:
+        self.state["spammer_prefixes"].append(spam_prefix)
 
 
 @bot.on_command("!removespamprefix", NO_SPLITTING)
 async def remove_spam_prefix(self, sender, source, spam_prefix):
     try:
-        self.state["spammer_prefixes"].remove(spam_prefix)
+        if sender.nick in COMBINED_USERS:
+            self.state["spammer_prefixes"].remove(spam_prefix)
     except ValueError:
         pass
 
@@ -372,6 +370,7 @@ async def update(_self, sender, _recipient, _args):
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
 
+
 @bot.on_command("!commit", NO_SPLITTING)
 async def commit(self, _sender, recipient, _args):
     info = (await subprocess.check_output(['git', 'log', '-1', '--pretty=%ai\t%B'])).decode('utf-8')
@@ -478,13 +477,6 @@ FREENODE_SPAM_PREFIXES = (
     'Christel just posted this "denial" on the freenode',
     "Consider Andrew Lee's involvement, Andrew Lee is Christel's"
     "boss at London Trust Media")
-
-
-@bot.on_privmsg
-async def kick_spammers(self, sender, channel, message):
-    for spam_pattern in FREENODE_SPAM_PREFIXES:
-        if message.startswith(spam_pattern):
-            await self.kick(channel, sender.nick, "spamming detected")
 
 
 async def main():
