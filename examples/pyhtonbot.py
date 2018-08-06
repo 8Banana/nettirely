@@ -422,7 +422,9 @@ async def cans(self, sender, recipient, *_):
 FREENODE_SPAM_PREFIXES = (
     'After the acquisition by Private Internet Access, Freenode is now being '
     'used to push ICO scams ',
-    'Christel just posted this "denial" on the freenode')
+    'Christel just posted this "denial" on the freenode',
+    "Consider Andrew Lee's involvement, Andrew Lee is Christel's"
+    "boss at London Trust Media")
 
 
 @bot.on_privmsg
