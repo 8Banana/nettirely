@@ -164,6 +164,14 @@ async def add_spam_prefix(self, sender, source, spam_prefix):
     self.state["spammer_prefixes"].append(spam_prefix)
 
 
+@bot.on_command("!removespamprefix", NO_SPLITTING)
+async def remove_spam_prefix(self, sender, source, spam_prefix):
+    try:
+        self.state["spammer_prefixes"].remove(spam_prefix)
+    except ValueError:
+        pass
+
+
 @bot.on_privmsg
 async def kick_spammers(self, sender, channel, message):
     for spam_pattern in self.state["spammer_prefixes"]:
@@ -171,12 +179,10 @@ async def kick_spammers(self, sender, channel, message):
             await self.kick(channel, sender.nick, "spamming detected")
 
 
-@bot.on_command("!prefixes", 0)
-async def send_prefixes(self, sender, source):
-    await self.send_privmsg(source, f"Sending the prefixes as a PM to {sender.nick} ...")
-
+@bot.on_command("!prefixes", NO_SPLITTING)
+async def send_prefixes(self, sender, source, _):
     for index, prefix in enumerate(self.state["spammer_prefixes"]):
-        await self.send_privmsg(sender.nick, f"{index + 1}. {prefix!r}")
+        await self.send_privmsg(source, f"{index + 1}. {prefix!r}")
 
 
 def _pick_word(word_frequencies):
