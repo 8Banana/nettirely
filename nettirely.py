@@ -6,7 +6,6 @@ import os
 import re
 
 import curio
-from curio import socket
 
 
 User = collections.namedtuple("User", ["nick", "user", "host"])
