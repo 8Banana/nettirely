@@ -113,11 +113,21 @@ class IrcBot:
 
         os.rename(self.state_path + ".tmp", self.state_path)
 
-    # FIXME: Add a length limit argument that breaks up the command if we need
-    # to. This will be useful for things like PRIVMSG or AUTHENTICATE.
     async def _send(self, *parts):
         data = " ".join(parts).encode(self.encoding) + b"\r\n"
         await self._sock.sendall(data)
+
+    async def _send_in_chunks(self, cmd, data, chunk_length):
+        while data:
+            if len(data) < chunk_length:
+                await self._send(cmd, data)
+                return False
+            elif len(data) == chunk_length:
+                await self._send(cmd, data)
+                return True
+            else:  # len(data) > chunk_length
+                chunk, data = data[:chunk_length], data[chunk_length:]
+                await self._send(cmd, chunk)
 
     async def _recv_line(self, *, autoreply_to_ping=True, skip_empty_lines=True):
         if not self._linebuffer:
@@ -214,7 +224,7 @@ class IrcBot:
 
                 b64_query = base64.b64encode(query.encode("utf-8")).decode("utf-8")
 
-                await self._send("AUTHENTICATE", b64_query)
+                await self._send_in_chunks("AUTHENTICATE", b64_query, chunk_length=400)
             elif msg.command == "900":  # RPL_LOGGEDIN
                 if capability_negotation_started:
                     await self._send("CAP", "END")
