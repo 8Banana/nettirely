@@ -66,12 +66,11 @@ class IrcBot:
             self.state_path = state_path
 
         self.nick = None
-        self._server = None
         self.encoding = encoding
         self.running = True
 
         self._linebuffer = collections.deque()
-        self._sock = socket.socket()
+        self._sock = None
 
         self.channel_users = {}
 
@@ -180,9 +179,8 @@ class IrcBot:
         """
 
         self.nick = nick
-        self._server = (host, port)
 
-        await self._sock.connect(self._server)
+        self._sock = await curio.open_connection(host, port, ssl=enable_ssl, server_hostname=host)
 
         username = "".join(c for c in self.nick if c.isalpha())
 
@@ -193,6 +191,9 @@ class IrcBot:
         if sasl_password is not None:
             capability_negotation_started = True
             await self._send("CAP", "REQ", "sasl")
+
+        if port is None:
+            port = 6697 if enable_ssl else 6667
 
         await self._send("NICK", self.nick)
         await self._send("USER", username, "0", "*", ":" + username)
