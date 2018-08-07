@@ -192,7 +192,7 @@ class IrcBot:
             await self._send("CAP", "REQ", "sasl")
 
         if port is None:
-            port = 6697 if enable_ssl else 6667
+            port = 6697 if ssl else 6667
 
         await self._send("NICK", self.nick)
         await self._send("USER", username, "0", "*", ":" + username)
