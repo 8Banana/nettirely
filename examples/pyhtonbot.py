@@ -6,6 +6,7 @@ We actually use this one on the #8Banana IRC channel :)
 
 import collections
 import datetime
+import os
 import random
 import re
 import sys
@@ -483,11 +484,14 @@ async def main():
     asks.init("curio")
     autoupdater.initialize()
 
+    password = os.environ.get("IRC_PASSWORD")
+
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
-        await bot.connect("pyhtonbot2", "chat.freenode.net")
+        nickname = os.environ["IRC_NICKNAME"]
+        await bot.connect(nickname, "chat.freenode.net", sasl_password=password)
         await bot.join_channel("#8banana-bottest")
     else:
-        await bot.connect("pyhtonbot", "chat.freenode.net")
+        await bot.connect("pyhtonbot", "chat.freenode.net", sasl_password=password)
         await bot.join_channel("#8banana")
         await bot.join_channel("##learnpython")
         await bot.join_channel("#lpmc")

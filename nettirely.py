@@ -1,4 +1,5 @@
 import atexit
+import base64
 import collections
 import inspect
 import json
@@ -116,7 +117,19 @@ class IrcBot:
         data = " ".join(parts).encode(self.encoding) + b"\r\n"
         await self._sock.sendall(data)
 
-    async def _recv_line(self):
+    async def _send_in_chunks(self, cmd, data, chunk_length):
+        while data:
+            if len(data) < chunk_length:
+                await self._send(cmd, data)
+                return False
+            elif len(data) == chunk_length:
+                await self._send(cmd, data)
+                return True
+            else:  # len(data) > chunk_length
+                chunk, data = data[:chunk_length], data[chunk_length:]
+                await self._send(cmd, chunk)
+
+    async def _recv_line(self, *, autoreply_to_ping=True, skip_empty_lines=True):
         if not self._linebuffer:
             data = bytearray()
             while not data.endswith(b"\r\n"):
@@ -129,7 +142,15 @@ class IrcBot:
             lines = data.decode(self.encoding, errors='replace').split("\r\n")
             self._linebuffer.extend(lines)
 
-        return self._linebuffer.popleft()
+        line = self._linebuffer.popleft()
+
+        if autoreply_to_ping and line.startswith("PING"):
+            await self._send(line.replace("PING", "PONG", 1))
+            return await self._recv_line(autoreply_to_ping=True, skip_empty_lines=skip_empty_lines)
+        elif skip_empty_lines and (not line):
+            return await self._recv_line(autoreply_to_ping=autoreply_to_ping, skip_empty_lines=True)
+        else:
+            return line
 
     @staticmethod
     def _split_line(line):
@@ -153,7 +174,7 @@ class IrcBot:
                 break
         return Message(sender, command, args)
 
-    async def connect(self, nick, host, port=6667):
+    async def connect(self, nick, host, port=6667, *, sasl_username=None, sasl_password=None, sasl_mechanism="PLAIN"):
         """
         Connects to an IRC server specified by host and port with a given nick.
         """
@@ -162,21 +183,59 @@ class IrcBot:
         self._server = (host, port)
 
         await self._sock.connect(self._server)
+
+        username = "".join(c for c in self.nick if c.isalpha())
+
+        # We need to track if we started capability negotiation to finish it.
+        capability_negotation_started = False
+
+        # Ask for SASL if we need it.
+        if sasl_password is not None:
+            capability_negotation_started = True
+            await self._send("CAP", "REQ", "sasl")
+
         await self._send("NICK", self.nick)
-        await self._send("USER", self.nick, "0", "*", ":" + self.nick)
+        await self._send("USER", username, "0", "*", ":" + username)
 
         while True:
-            line = await self._recv_line()
-            if line.startswith("PING"):
-                await self._send(line.replace("PING", "PONG", 1))
-                continue
-            msg = self._split_line(line)
-            if msg.command == "001":  # RPL_WELCOME
-                break
+            msg = self._split_line(await self._recv_line())
+
+            if msg.command == "CAP":
+                subcommand = msg.args[1]
+
+                if subcommand == "ACK":
+                    acknowledged = set(msg.args[-1].split())
+
+                    if "sasl" in acknowledged:
+                        await self._send("AUTHENTICATE", sasl_mechanism)
+                elif subcommand == "NAK":
+                    rejected = set(msg.args[-1].split())
+
+                    if "sasl" in rejected:
+                        raise ValueError("The server does not support SASL.")
+            elif msg.command == "AUTHENTICATE":
+                if sasl_mechanism == "PLAIN":
+                    if sasl_username is None:
+                        query = f"\0{self.nick}\0{sasl_password}"
+                    else:
+                        query = f"{sasl_username}\0{self.nick}\0{sasl_password}"
+                else:
+                    raise ValueError(f"SASL mechanism {sasl_mechanism!r} is not supported.")
+
+                b64_query = base64.b64encode(query.encode("utf-8")).decode("utf-8")
+
+                await self._send_in_chunks("AUTHENTICATE", b64_query, chunk_length=400)
+            elif msg.command == "900":  # RPL_LOGGEDIN
+                if capability_negotation_started:
+                    await self._send("CAP", "END")
+            elif msg.command == "904":  # RPL_SASLFAILED
+                raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
-                raise ValueError(f"The nickname {self.nick!r} is already used")
+                raise ValueError(f"The nickname {self.nick!r} is already in use.")
             elif msg.command == "432":  # ERR_ERRONEUSNICKNAME
-                raise ValueError(f"The nickname {self.nick!r} is erroneous")
+                raise ValueError(f"The nickname {self.nick!r} is erroneous.")
+            elif msg.command == "001":  # RPL_WELCOME
+                break
 
         async with curio.TaskGroup() as g:
             for callback in self._connection_callbacks:
@@ -212,11 +271,6 @@ class IrcBot:
 
         while self.running:
             line = await self._recv_line()
-            if not line:
-                continue
-            if line.startswith("PING"):
-                await self._send(line.replace("PING", "PONG", 1))
-                continue
             msg = self._split_line(line)
 
             # The following block handles self.channel_users
