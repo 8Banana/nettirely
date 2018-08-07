@@ -43,7 +43,7 @@ EMPTY_WORD = "__EMPTY__"
 PRECEDING_WORDS = 2
 JSON_TUPLE_SEPARATOR = "\0"
 
-bot = IrcBot(state_path="pyhtonbot_state.json", enable_ssl=True)
+bot = IrcBot(state_path="pyhtonbot_state.json")
 
 
 @bot.on_command(">>>", NO_SPLITTING)
@@ -488,10 +488,10 @@ async def main():
 
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
         nickname = os.environ["IRC_NICKNAME"]
-        await bot.connect(nickname, "chat.freenode.net", sasl_password=password)
+        await bot.connect(nickname, "chat.freenode.net", sasl_password=password, enable_ssl=True)
         await bot.join_channel("#8banana-bottest")
     else:
-        await bot.connect("pyhtonbot", "chat.freenode.net", sasl_password=password)
+        await bot.connect("pyhtonbot", "chat.freenode.net", sasl_password=password, enable_ssl=True)
         await bot.join_channel("#8banana")
         await bot.join_channel("##learnpython")
         await bot.join_channel("#lpmc")
