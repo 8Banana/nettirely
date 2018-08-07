@@ -113,6 +113,8 @@ class IrcBot:
 
         os.rename(self.state_path + ".tmp", self.state_path)
 
+    # FIXME: Add a length limit argument that breaks up the command if we need
+    # to. This will be useful for things like PRIVMSG or AUTHENTICATE.
     async def _send(self, *parts):
         data = " ".join(parts).encode(self.encoding) + b"\r\n"
         await self._sock.sendall(data)
@@ -162,7 +164,7 @@ class IrcBot:
                 break
         return Message(sender, command, args)
 
-    async def connect(self, nick, host, port=6667, password=None):
+    async def connect(self, nick, host, port=6667, *, sasl_username=None, sasl_password=None, sasl_mechanism="PLAIN"):
         """
         Connects to an IRC server specified by host and port with a given nick.
         """
@@ -172,67 +174,64 @@ class IrcBot:
 
         await self._sock.connect(self._server)
 
-        if password is not None:
+        username = "".join(c for c in self.nick if c.isalpha())
+
+        # We need to track if we started capability negotiation to finish it.
+        capability_negotation_started = False
+
+        # Ask for SASL if we need it.
+        if sasl_password is not None:
+            capability_negotation_started = True
             await self._send("CAP", "REQ", "sasl")
 
         await self._send("NICK", self.nick)
-
-        username = "".join(c for c in self.nick if c.isalpha())
         await self._send("USER", username, "0", "*", ":" + username)
 
-        # Handle SASL capability registration + SASL in general.
-        if password is not None:
-            while True:
-                line = await self._recv_line()
-                msg = self._split_line(line)
-
-                if msg.command == "CAP":
-                    subcommand = msg.args[1]
-                    if subcommand == "ACK":
-                        # Since "sasl" is the only capability we ask for, it's
-                        # obviously in any ACK response. However a check
-                        # in debug mode is still nice.
-                        assert "sasl" in msg.args[-1]
-
-                        await self._send("AUTHENTICATE", "PLAIN")
-                    elif subcommand == "NAK":
-                        raise RuntimeError("The server does not support SASL.")
-                elif msg.command == "AUTHENTICATE":
-                    # Since "PLAIN" is the only mechanism we support, the
-                    # response from the server will always be empty. However a
-                    # check in debug mode is still nice.
-                    assert msg.args == ["+"]
-
-                    query = f"\0{self.nick}\0{password}"
-                    b64_query = base64.b64encode(query.encode("utf-8")).decode("utf-8")
-
-                    # You really shouldn't have that long of a PLAIN password,
-                    # however we will need to support this in the future if we
-                    # choose anything but PLAIN.
-                    assert len(b64_query) < 400
-
-                    await self._send("AUTHENTICATE", b64_query)
-                elif msg.command == "900":  # RPL_LOGGEDIN
-                    await self._send("CAP", "END")
-                    break
-                elif msg.command == "904":  # RPL_SASLFAILED
-                    raise RuntimeError("Failed to authenticate with SASL.")
-
-        # Handle regular registration.
         while True:
-            line = await self._recv_line()
-            msg = self._split_line(line)
-            if msg.command == "001":  # RPL_WELCOME
-                break
+            msg = self._split_line(await self._recv_line())
+
+            if msg.command == "CAP":
+                subcommand = msg.args[1]
+
+                if subcommand == "ACK":
+                    acknowledged = set(msg.args[-1].split())
+
+                    if "sasl" in acknowledged:
+                        await self._send("AUTHENTICATE", sasl_mechanism)
+                elif subcommand == "NAK":
+                    rejected = set(msg.args[-1].split())
+
+                    if "sasl" in rejected:
+                        raise ValueError("The server does not support SASL.")
+            elif msg.command == "AUTHENTICATE":
+                if sasl_mechanism == "PLAIN":
+                    if sasl_username is None:
+                        query = f"\0{self.nick}\0{sasl_password}"
+                    else:
+                        query = f"{sasl_username}\0{self.nick}\0{sasl_password}"
+                else:
+                    raise ValueError(f"SASL mechanism {sasl_mechanism!r} is not supported.")
+
+                b64_query = base64.b64encode(query.encode("utf-8")).decode("utf-8")
+
+                await self._send("AUTHENTICATE", b64_query)
+            elif msg.command == "900":  # RPL_LOGGEDIN
+                if capability_negotation_started:
+                    await self._send("CAP", "END")
+            elif msg.command == "904":  # RPL_SASLFAILED
+                raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
-                raise ValueError(f"The nickname {self.nick!r} is already used")
+                raise ValueError(f"The nickname {self.nick!r} is already in use.")
             elif msg.command == "432":  # ERR_ERRONEUSNICKNAME
-                raise ValueError(f"The nickname {self.nick!r} is erroneous")
+                raise ValueError(f"The nickname {self.nick!r} is erroneous.")
+            elif msg.command == "001":  # RPL_WELCOME
+                break
 
         async with curio.TaskGroup() as g:
             for callback in self._connection_callbacks:
                 await g.spawn(callback(self))
             await g.join()
+
     async def join_channel(self, channel):
         await self._send("JOIN", channel)
 

@@ -482,7 +482,7 @@ async def main():
         nickname = os.environ["IRC_USERNAME"]
         password = os.environ.get("IRC_PASSWORD")
 
-        await bot.connect(nickname, "chat.freenode.net", password=password)
+        await bot.connect(nickname, "chat.freenode.net", sasl_password=password)
         await bot.join_channel("#8banana-bottest")
     else:
         await bot.connect("pyhtonbot", "chat.freenode.net")
