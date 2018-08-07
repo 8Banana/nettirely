@@ -146,9 +146,9 @@ class IrcBot:
 
         if autoreply_to_ping and line.startswith("PING"):
             await self._send(line.replace("PING", "PONG", 1))
-            return (await self._recv_line(autoreply_to_ping=True, skip_empty_lines=skip_empty_lines))
+            return await self._recv_line(autoreply_to_ping=True, skip_empty_lines=skip_empty_lines)
         elif skip_empty_lines and (not line):
-            return (await self._recv_line(autoreply_to_ping=autoreply_to_ping, skip_empty_lines=True))
+            return await self._recv_line(autoreply_to_ping=autoreply_to_ping, skip_empty_lines=True)
         else:
             return line
 
