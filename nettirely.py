@@ -53,7 +53,7 @@ class IrcBot:
     state_path = os.path.join(os.path.dirname(__file__), "state.json")
     quit_reason = "Goodbye!"
 
-    def __init__(self, encoding="utf-8", state_path=None):
+    def __init__(self, encoding="utf-8", state_path=None, enable_ssl=False):
         """
         Initializes an IrcBot instance.
 
@@ -63,6 +63,8 @@ class IrcBot:
 
         if state_path is not None:
             self.state_path = state_path
+
+        self.enable_ssl = enable_ssl
 
         self.nick = None
         self.encoding = encoding
@@ -179,7 +181,7 @@ class IrcBot:
 
         self.nick = nick
 
-        self._sock = await curio.open_connection(host, port, ssl=enable_ssl, server_hostname=host)
+        self._sock = await curio.open_connection(host, port, ssl=self.enable_ssl, server_hostname=host)
 
         username = "".join(c for c in self.nick if c.isalpha())
 
@@ -192,7 +194,7 @@ class IrcBot:
             await self._send("CAP", "REQ", "sasl")
 
         if port is None:
-            port = 6697 if ssl else 6667
+            port = 6697 if self.enable_ssl else 6667
 
         await self._send("NICK", self.nick)
         await self._send("USER", username, "0", "*", ":" + username)

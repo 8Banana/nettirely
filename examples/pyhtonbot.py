@@ -43,7 +43,7 @@ EMPTY_WORD = "__EMPTY__"
 PRECEDING_WORDS = 2
 JSON_TUPLE_SEPARATOR = "\0"
 
-bot = IrcBot(state_path="pyhtonbot_state.json")
+bot = IrcBot(state_path="pyhtonbot_state.json", enable_ssl=True)
 
 
 @bot.on_command(">>>", NO_SPLITTING)
