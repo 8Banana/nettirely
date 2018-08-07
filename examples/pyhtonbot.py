@@ -477,7 +477,12 @@ async def main():
     autoupdater.initialize()
 
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
-        await bot.connect("pyhtonbot2", "chat.freenode.net")
+        import os
+
+        nickname = os.environ["IRC_USERNAME"]
+        password = os.environ.get("IRC_PASSWORD")
+
+        await bot.connect(nickname, "chat.freenode.net", password=password)
         await bot.join_channel("#8banana-bottest")
     else:
         await bot.connect("pyhtonbot", "chat.freenode.net")

@@ -1,4 +1,5 @@
 import atexit
+import base64
 import collections
 import inspect
 import json
@@ -153,7 +154,7 @@ class IrcBot:
                 break
         return Message(sender, command, args)
 
-    async def connect(self, nick, host, port=6667):
+    async def connect(self, nick, host, port=6667, password=None):
         """
         Connects to an IRC server specified by host and port with a given nick.
         """
@@ -162,9 +163,57 @@ class IrcBot:
         self._server = (host, port)
 
         await self._sock.connect(self._server)
-        await self._send("NICK", self.nick)
-        await self._send("USER", self.nick, "0", "*", ":" + self.nick)
 
+        if password is not None:
+            await self._send("CAP", "REQ", "sasl")
+
+        await self._send("NICK", self.nick)
+
+        username = "".join(c for c in self.nick if c.isalpha())
+        await self._send("USER", username, "0", "*", ":" + username)
+
+        # Handle SASL capability registration + SASL in general.
+        if password is not None:
+            while True:
+                line = await self._recv_line()
+                if line.startswith("PING"):
+                    await self._send(line.replace("PING", "PONG", 1))
+                    continue
+                msg = self._split_line(line)
+
+                if msg.command == "CAP":
+                    subcommand = msg.args[1]
+                    if subcommand == "ACK":
+                        # Since "sasl" is the only capability we ask for, it's
+                        # obviously in any ACK response. However a check
+                        # in debug mode is still nice.
+                        assert "sasl" in msg.args[-1]
+
+                        await self._send("AUTHENTICATE", "PLAIN")
+                    elif subcommand == "NAK":
+                        raise RuntimeError("The server does not support SASL.")
+                elif msg.command == "AUTHENTICATE":
+                    # Since "PLAIN" is the only mechanism we support, the
+                    # response from the server will always be empty. However a
+                    # check in debug mode is still nice.
+                    assert msg.args == ["+"]
+
+                    query = f"\0{self.nick}\0{password}"
+                    b64_query = base64.b64encode(query.encode("utf-8")).decode("utf-8")
+
+                    # You really shouldn't have that long of a PLAIN password,
+                    # however we will need to support this in the future if we
+                    # choose anything but PLAIN.
+                    assert len(b64_query) < 400
+
+                    await self._send("AUTHENTICATE", b64_query)
+                elif msg.command == "900":  # RPL_LOGGEDIN
+                    await self._send("CAP", "END")
+                    break
+                elif msg.command == "904":  # RPL_SASLFAILED
+                    raise RuntimeError("Failed to authenticate with SASL.")
+
+        # Handle regular registration.
         while True:
             line = await self._recv_line()
             if line.startswith("PING"):
@@ -182,7 +231,6 @@ class IrcBot:
             for callback in self._connection_callbacks:
                 await g.spawn(callback(self))
             await g.join()
-
     async def join_channel(self, channel):
         await self._send("JOIN", channel)
 
