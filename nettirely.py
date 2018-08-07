@@ -172,7 +172,7 @@ class IrcBot:
                 break
         return Message(sender, command, args)
 
-    async def connect(self, nick, host, port=6667, *, sasl_username=None, sasl_password=None, sasl_mechanism="PLAIN",
+    async def connect(self, nick, host, port=None, *, sasl_username=None, sasl_password=None, sasl_mechanism="PLAIN",
                       enable_ssl=False):
         """
         Connects to an IRC server specified by host and port with a given nick.
@@ -180,9 +180,10 @@ class IrcBot:
 
         self.nick = nick
 
-        self._sock = await curio.open_connection(host, port, ssl=enable_ssl, server_hostname=host)
+        if port is None:
+            port = 6697 if enable_ssl else 6667
 
-        username = "".join(c for c in self.nick if c.isalpha())
+        self._sock = await curio.open_connection(host, port, ssl=enable_ssl, server_hostname=host)
 
         # We need to track if we started capability negotiation to finish it.
         capability_negotation_started = False
@@ -192,9 +193,7 @@ class IrcBot:
             capability_negotation_started = True
             await self._send("CAP", "REQ", "sasl")
 
-        if port is None:
-            port = 6697 if enable_ssl else 6667
-
+        username = "".join(c for c in self.nick if c.isalpha())
         await self._send("NICK", self.nick)
         await self._send("USER", username, "0", "*", ":" + username)
 
