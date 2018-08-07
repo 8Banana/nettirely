@@ -117,7 +117,7 @@ class IrcBot:
         data = " ".join(parts).encode(self.encoding) + b"\r\n"
         await self._sock.sendall(data)
 
-    async def _recv_line(self):
+    async def _recv_line(self, *, autoreply_to_ping=True, skip_empty_lines=True):
         if not self._linebuffer:
             data = bytearray()
             while not data.endswith(b"\r\n"):
@@ -130,7 +130,19 @@ class IrcBot:
             lines = data.decode(self.encoding, errors='replace').split("\r\n")
             self._linebuffer.extend(lines)
 
-        return self._linebuffer.popleft()
+        line = self._linebuffer.popleft()
+
+        if autoreply_to_ping and line.startswith("PING"):
+            await self._send(line.replace("PING", "PONG", 1))
+
+            # Let's fetch another line from the server. I wrote this using
+            # recursion because I didn't feel like re-writing this function to
+            # be iterative.
+            return self._recv_line(autoreply_to_ping=True, skip_empty_lines=skip_empty_lines)
+        elif skip_empty_lines and (not line):
+            return self._recv_line(autoreply_to_ping=autoreply_to_ping, skip_empty_lines=True)
+        else:
+            return line
 
     @staticmethod
     def _split_line(line):
@@ -176,9 +188,6 @@ class IrcBot:
         if password is not None:
             while True:
                 line = await self._recv_line()
-                if line.startswith("PING"):
-                    await self._send(line.replace("PING", "PONG", 1))
-                    continue
                 msg = self._split_line(line)
 
                 if msg.command == "CAP":
@@ -216,9 +225,6 @@ class IrcBot:
         # Handle regular registration.
         while True:
             line = await self._recv_line()
-            if line.startswith("PING"):
-                await self._send(line.replace("PING", "PONG", 1))
-                continue
             msg = self._split_line(line)
             if msg.command == "001":  # RPL_WELCOME
                 break
@@ -260,11 +266,6 @@ class IrcBot:
 
         while self.running:
             line = await self._recv_line()
-            if not line:
-                continue
-            if line.startswith("PING"):
-                await self._send(line.replace("PING", "PONG", 1))
-                continue
             msg = self._split_line(line)
 
             # The following block handles self.channel_users
