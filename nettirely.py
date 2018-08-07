@@ -70,7 +70,7 @@ class IrcBot:
         self.running = True
 
         self._linebuffer = collections.deque()
-        self._sock = socket.socket()
+        self._sock = None
 
         self.channel_users = {}
 
@@ -153,7 +153,7 @@ class IrcBot:
                 break
         return Message(sender, command, args)
 
-    async def connect(self, nick, host, port=6667):
+    async def connect(self, nick, host, port=None, enable_ssl=True):
         """
         Connects to an IRC server specified by host and port with a given nick.
         """
@@ -161,7 +161,11 @@ class IrcBot:
         self.nick = nick
         self._server = (host, port)
 
-        await self._sock.connect(self._server)
+        if port is None:
+            port = 6697 if enable_ssl else 6667
+
+        self._sock = await curio.open_connection(host, port, ssl=enable_ssl, server_hostname=host)
+
         await self._send("NICK", self.nick)
         await self._send("USER", self.nick, "0", "*", ":" + self.nick)
 
