@@ -1,10 +1,10 @@
 import atexit
-import base64
 import collections
 import inspect
 import json
 import os
 import re
+from base64 import b64encode
 
 import curio
 
@@ -262,9 +262,7 @@ class IrcBot:
                         f"SASL mechanism {sasl_mechanism!r} is not supported."
                     )
 
-                b64_query = base64.b64encode(query.encode("utf-8")).decode(
-                    "utf-8"
-                )
+                b64_query = b64encode(query.encode("utf-8")).decode("utf-8")
 
                 await self._send_in_chunks(
                     "AUTHENTICATE", b64_query, chunk_length=400
