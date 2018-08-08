@@ -331,7 +331,7 @@ class IrcBot:
         Handles keeping the connection alive and dispatching event handlers.
         """
 
-        while self.running:
+        while self._running:
             msg = self._split_line(await self._recv_line())
 
             # Keep track of who's in each channel.
