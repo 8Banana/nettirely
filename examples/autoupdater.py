@@ -13,7 +13,9 @@ _force_update_event = threading.Event()
 
 
 def _get_output(args):
-    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.run(
+        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
 
     if process.returncode == 0:
         return process.stdout.decode("ascii").strip()
@@ -26,8 +28,13 @@ def _get_output(args):
         with open("stderr.%d.log" % pid, "wb") as f:
             f.write(process.stderr)
 
-        raise RuntimeError(("There was an error while running the command %r."
-                           "You can find stdout & stderr in the current working directory. (PID %d)") % (args, pid))
+        raise RuntimeError(
+            (
+                "There was an error while running the command %r."
+                "You can find stdout & stderr in the current working directory. (PID %d)"
+            )
+            % (args, pid)
+        )
 
 
 def restart():
@@ -54,9 +61,11 @@ def initialize():
         current_commit_hash = _get_output(["git", "rev-parse", "HEAD"])
 
         while True:
-            command = subprocess.run(["git", "pull", remote, branch],
-                                     stdout=subprocess.DEVNULL,
-                                     stderr=subprocess.DEVNULL)
+            command = subprocess.run(
+                ["git", "pull", remote, branch],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
             if command.returncode == 0:
                 new_commit_hash = _get_output(["git", "rev-parse", "HEAD"])

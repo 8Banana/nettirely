@@ -23,7 +23,7 @@ from nettirely import IrcBot, NO_SPLITTING
 
 # General bot constants
 ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
-TRUSTED = {'marky1991', 'darkf', 'go|dfish', 'stuzz'}
+TRUSTED = {"marky1991", "darkf", "go|dfish", "stuzz"}
 COMBINED_USERS = ADMINS | TRUSTED
 
 # Last seen constants
@@ -32,10 +32,18 @@ TIME_AMOUNTS = ("second", "minute", "hour")
 # Fish slapper constants
 SLAP_TEMPLATE = "slaps {slappee} around a bit with {fish}"
 FISH = (
-    "asyncio", "multiprocessing", "twisted", "django", "pathlib",
-    "python 2.7", "a daemon thread", "unittest", "logging",
+    "asyncio",
+    "multiprocessing",
+    "twisted",
+    "django",
+    "pathlib",
+    "python 2.7",
+    "a daemon thread",
+    "unittest",
+    "logging",
     "xml.parsers.expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE",
-    "urllib.request.HTTPPasswordMgrWithDefaultRealm", "javascript",
+    "urllib.request.HTTPPasswordMgrWithDefaultRealm",
+    "javascript",
 )
 
 # Markov chain constants
@@ -57,8 +65,9 @@ async def annoy_raylu(self, _, recipient, text):
 @bot.on_command("!slap", 1)
 async def slap(self, _, recipient, slappee):
     fish = random.choice(FISH)
-    await self.send_action(recipient, SLAP_TEMPLATE.format(slappee=slappee,
-                                                           fish=fish))
+    await self.send_action(
+        recipient, SLAP_TEMPLATE.format(slappee=slappee, fish=fish)
+    )
 
 
 @bot.on_connect
@@ -66,21 +75,27 @@ async def initialize_logs(self):
     logs = collections.defaultdict(lambda: collections.deque(maxlen=500))
 
     if "logs" in self.state:
-        logs.update({k: collections.deque(v, maxlen=500)
-                     for k, v in self.state["logs"].items()})
+        logs.update(
+            {
+                k: collections.deque(v, maxlen=500)
+                for k, v in self.state["logs"].items()
+            }
+        )
 
     self.state["logs"] = logs
 
 
 @bot.on_disconnect
 def save_logs(self):
-    self.state["logs"] = \
-        {k: list(v) for k, v in self.state.get("logs", {}).items()}
+    self.state["logs"] = {
+        k: list(v) for k, v in self.state.get("logs", {}).items()
+    }
 
 
 async def upload_log(lines):
-    resp = await asks.post("https://theelous3.net/irc_log",
-                           data="\n".join(lines))
+    resp = await asks.post(
+        "https://theelous3.net/irc_log", data="\n".join(lines)
+    )
     return resp.text
 
 
@@ -88,7 +103,7 @@ async def upload_log(lines):
 async def append_join_to_log(self, sender, channel):
     logs = self.state["logs"]
     now = datetime.datetime.now().strftime("%X")
-    logs[channel].append(f'[{now}] {sender.nick} joined {channel}')
+    logs[channel].append(f"[{now}] {sender.nick} joined {channel}")
 
 
 @bot.on_part
@@ -98,7 +113,7 @@ async def append_part_to_log(self, sender, channel, reason=None):
 
     logs = self.state["logs"]
     now = datetime.datetime.now().strftime("%X")
-    logs[channel].append(f'[{now}] {sender.nick} parted {channel} ({reason})')
+    logs[channel].append(f"[{now}] {sender.nick} parted {channel} ({reason})")
 
 
 @bot.on_quit
@@ -109,7 +124,7 @@ async def append_quit_to_log(self, sender, reason=None):
     now = datetime.datetime.now().strftime("%X")
 
     # Can we know what channels to show this in?
-    msg = f'[{now}] {sender.nick} quit ({reason})'
+    msg = f"[{now}] {sender.nick} quit ({reason})"
 
     logs = self.state["logs"]
 
@@ -122,7 +137,7 @@ async def append_quit_to_log(self, sender, reason=None):
 async def append_privmsg_to_log(self, sender, channel, message):
     now = datetime.datetime.now().strftime("%X")
     logs = self.state["logs"]
-    logs[channel].append(f'[{now}] <{sender.nick}> {message}')
+    logs[channel].append(f"[{now}] <{sender.nick}> {message}")
 
 
 @bot.on_command("!log", 0)
@@ -149,10 +164,14 @@ async def add_spammer(self, sender, source, spammer_nickname):
                 first_spammer_message = message
                 break
     else:  # no break
-        await self.send_privmsg(source, f"Could not find a first message for {spammer_nickname!r}")
+        await self.send_privmsg(
+            source, f"Could not find a first message for {spammer_nickname!r}"
+        )
         return
 
-    await self.send_privmsg(source, f"Added {first_spammer_message!r} as a prefix.")
+    await self.send_privmsg(
+        source, f"Added {first_spammer_message!r} as a prefix."
+    )
     self.state["spammer_prefixes"].append(first_spammer_message)
 
 
@@ -198,24 +217,31 @@ def _pick_word(word_frequencies):
 @bot.on_connect
 async def initialize_markov_chains(self):
     # These two methods are what I like to call "unholy."
-    self.state["markov_chains"] = {user: {tuple(k.split(JSON_TUPLE_SEPARATOR)): v for k, v in chain.items()}
-                                   for user, chain in self.state.get("markov_chains", {}).items()}
+    self.state["markov_chains"] = {
+        user: {
+            tuple(k.split(JSON_TUPLE_SEPARATOR)): v for k, v in chain.items()
+        }
+        for user, chain in self.state.get("markov_chains", {}).items()
+    }
 
 
 @bot.on_disconnect
 def save_markov_chains(self):
-    self.state["markov_chains"] = {user: {JSON_TUPLE_SEPARATOR.join(k): v for k, v in chain.items()}
-                                   for user, chain in self.state.get("markov_chains", {}).items()}
+    self.state["markov_chains"] = {
+        user: {JSON_TUPLE_SEPARATOR.join(k): v for k, v in chain.items()}
+        for user, chain in self.state.get("markov_chains", {}).items()
+    }
 
 
 def _train_markov_chain(markov_chain, text):
-    words = \
-        [EMPTY_WORD] * PRECEDING_WORDS + \
-        text.split() + \
+    words = (
         [EMPTY_WORD] * PRECEDING_WORDS
+        + text.split()
+        + [EMPTY_WORD] * PRECEDING_WORDS
+    )
 
     for i in range(0, len(words) - PRECEDING_WORDS - 1):
-        *preceding, word = words[i:i+PRECEDING_WORDS+1]
+        *preceding, word = words[i : i + PRECEDING_WORDS + 1]
 
         prefix = markov_chain.setdefault(tuple(preceding), {})
 
@@ -241,6 +267,7 @@ def _reconstruct_text(markov_chain):
 
     return " ".join(result)
 
+
 @bot.on_privmsg
 async def update_markov_chain(self, sender, _channel, message):
     markov_chains = self.state.setdefault("markov_chains", {})
@@ -256,11 +283,11 @@ async def parrot(self, sender, channel, user):
     if markov_chain:
         mimic = _reconstruct_text(markov_chain)
 
-        await self.send_privmsg(channel,
-                                f"{sender.nick}: {mimic}")
+        await self.send_privmsg(channel, f"{sender.nick}: {mimic}")
     else:
-        await self.send_privmsg(channel,
-                                f"{sender.nick}: I don't know how to parrot {user}.")
+        await self.send_privmsg(
+            channel, f"{sender.nick}: I don't know how to parrot {user}."
+        )
 
 
 @bot.on_privmsg
@@ -292,16 +319,18 @@ async def show_seen(self, sender, channel, user):
         else:
             when = f"{when} {amount} ago"
 
-        await self.send_privmsg(channel,
-                                f"{sender.nick}: {user} was last seen {when}.")
+        await self.send_privmsg(
+            channel, f"{sender.nick}: {user} was last seen {when}."
+        )
     else:
-        await self.send_privmsg(channel,
-                                f"{sender.nick}: I've never seen {user}.")
+        await self.send_privmsg(
+            channel, f"{sender.nick}: I've never seen {user}."
+        )
 
 
 def _make_url(domain, what2google):
     # example response: 'http://www.lmfgtfy.com/?q=wolo+wolo'
-    params = urllib.parse.urlencode({'q': what2google})
+    params = urllib.parse.urlencode({"q": what2google})
     return "http://www.%s/?%s" % (domain, params)
 
 
@@ -313,8 +342,9 @@ async def _respond(self, recipient, domain, text):
         target, what2google = text.split(maxsplit=1)
     except ValueError:
         command = "fgoogle" if domain == "lmfgtfy.com" else "google"
-        await self.send_privmsg(recipient,
-                                "Usage: !%s nick what2google" % command)
+        await self.send_privmsg(
+            recipient, "Usage: !%s nick what2google" % command
+        )
         return
 
     url = _make_url(domain, what2google)
@@ -339,15 +369,20 @@ async def autolog(self, sender, recipient, argument):
     self.state.setdefault("autologgers", [])
     if argument == "on":
         self.state["autologgers"].append(sender.nick)
-        await self.send_privmsg(recipient,
-                                f"{sender.nick}: You will recieve logs automatically.")
+        await self.send_privmsg(
+            recipient, f"{sender.nick}: You will recieve logs automatically."
+        )
     elif argument == "off":
         if sender.nick in self.state["autologgers"]:
             self.state["autologgers"].remove(sender.nick)
-        await self.send_privmsg(recipient,
-                                f"{sender.nick}: You will not recieve logs automatically anymore.")
+        await self.send_privmsg(
+            recipient,
+            f"{sender.nick}: You will not recieve logs automatically anymore.",
+        )
     else:
-        await self.send_privmsg(recipient, f"{sender.nick}: USAGE: !autolog on/off")
+        await self.send_privmsg(
+            recipient, f"{sender.nick}: USAGE: !autolog on/off"
+        )
 
 
 @bot.on_join
@@ -374,11 +409,15 @@ async def update(_self, sender, _recipient, _args):
 
 @bot.on_command("!commit", NO_SPLITTING)
 async def commit(self, _sender, recipient, _args):
-    info = (await subprocess.check_output(['git', 'log', '-1', '--pretty=%ai\t%B'])).decode('utf-8')
+    info = (
+        await subprocess.check_output(["git", "log", "-1", "--pretty=%ai\t%B"])
+    ).decode("utf-8")
     update_time, commit_message = info.split("\t", 1)
     commit_summary = commit_message.splitlines()[0]
 
-    await bot.send_privmsg(recipient, f"Updated at {update_time}: {commit_summary!r}")
+    await bot.send_privmsg(
+        recipient, f"Updated at {update_time}: {commit_summary!r}"
+    )
 
 
 @bot.on_command("!reload", NO_SPLITTING)
@@ -394,6 +433,7 @@ def _add_canned_response(self, limiter, regexp, response):
     async def _canned_response(inner_self, _sender, recipient, _match):
         if "*" in limiter or recipient in limiter:
             await inner_self.send_privmsg(recipient, response)
+
     self.on_regexp(regexp)(_canned_response)
 
 
@@ -409,22 +449,25 @@ async def canned_response(self, sender, recipient, args):
     try:
         limiter, regexp, response = args.split(" ", 2)
     except ValueError:
-        await self.send_privmsg(recipient,
-                                f"{sender.nick}: !can LIMITER REGEXP RESP")
+        await self.send_privmsg(
+            recipient, f"{sender.nick}: !can LIMITER REGEXP RESP"
+        )
         return
 
     try:
         re.compile(regexp)
     except re.error as e:
-        await self.send_privmsg(recipient,
-                                f"{sender.nick}: Your RegExp is invalid ({e})")
+        await self.send_privmsg(
+            recipient, f"{sender.nick}: Your RegExp is invalid ({e})"
+        )
         return
 
     canned_responses = self.state.setdefault("canned_responses", {})
     canned_responses[regexp] = (limiter.split(","), response)
     _add_canned_response(self, limiter, regexp, response)
-    await self.send_privmsg(recipient,
-                            f"{sender.nick}: Successfully canned your response.")
+    await self.send_privmsg(
+        recipient, f"{sender.nick}: Successfully canned your response."
+    )
 
 
 @bot.on_command("!uncan", 1)
@@ -456,28 +499,26 @@ async def uncan_response(self, _sender, recipient, regexp):
                     del self._regexp_callbacks[compiled_regexp][i]
             i += 1
 
-        await self.send_privmsg(recipient,
-                                f"Successfully removed {regexp!r}.")
+        await self.send_privmsg(recipient, f"Successfully removed {regexp!r}.")
 
 
 @bot.on_command("!cans")
 async def cans(self, sender, recipient, *_):
     canned_responses = self.state.get("canned_responses", {})
 
-    await self.send_privmsg(recipient,
-                            f"{sender.nick}: Check your PMs!")
+    await self.send_privmsg(recipient, f"{sender.nick}: Check your PMs!")
     for regexp, response in canned_responses.items():
-        await self.send_privmsg(sender.nick,
-                                f"{regexp!r} -> {response!r}")
+        await self.send_privmsg(sender.nick, f"{regexp!r} -> {response!r}")
         await curio.sleep(1 / 10)  # 10 cans per second.
 
 
 FREENODE_SPAM_PREFIXES = (
-    'After the acquisition by Private Internet Access, Freenode is now being '
-    'used to push ICO scams ',
+    "After the acquisition by Private Internet Access, Freenode is now being "
+    "used to push ICO scams ",
     'Christel just posted this "denial" on the freenode',
     "Consider Andrew Lee's involvement, Andrew Lee is Christel's"
-    "boss at London Trust Media")
+    "boss at London Trust Media",
+)
 
 
 async def main():
@@ -488,10 +529,20 @@ async def main():
 
     if len(sys.argv) > 1 and sys.argv[1] == "debug":
         nickname = os.environ["IRC_NICKNAME"]
-        await bot.connect(nickname, "chat.freenode.net", sasl_password=password, enable_ssl=True)
+        await bot.connect(
+            nickname,
+            "chat.freenode.net",
+            sasl_password=password,
+            enable_ssl=True,
+        )
         await bot.join_channel("#8banana-bottest")
     else:
-        await bot.connect("pyhtonbot", "chat.freenode.net", sasl_password=password, enable_ssl=True)
+        await bot.connect(
+            "pyhtonbot",
+            "chat.freenode.net",
+            sasl_password=password,
+            enable_ssl=True,
+        )
         await bot.join_channel("#8banana")
         await bot.join_channel("##learnpython")
         await bot.join_channel("#lpmc")
@@ -503,6 +554,7 @@ async def main():
         except BaseException:
             traceback.print_exc()
             autoupdater.restart()
+
 
 if __name__ == "__main__":
     try:

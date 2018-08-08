@@ -23,6 +23,7 @@ def _create_callback_registration(key):
             raise ValueError("You can only register coroutines!")
         self._message_callbacks.setdefault(key, []).append(func)
         return func
+
     return _inner
 
 
@@ -59,7 +60,9 @@ class IrcBot:
         if state_path is not None:
             self.state_path = state_path
         else:
-            self.state_path = os.path.join(os.path.dirname(__file__), "state.json")
+            self.state_path = os.path.join(
+                os.path.dirname(__file__), "state.json"
+            )
 
         self.nick = None
         self.encoding = encoding
@@ -124,7 +127,9 @@ class IrcBot:
                 chunk, data = data[:chunk_length], data[chunk_length:]
                 await self._send(cmd, chunk)
 
-    async def _recv_line(self, *, autoreply_to_ping=True, skip_empty_lines=True):
+    async def _recv_line(
+        self, *, autoreply_to_ping=True, skip_empty_lines=True
+    ):
         if not self._linebuffer:
             data = bytearray()
             while not data.endswith(b"\r\n"):
@@ -134,16 +139,20 @@ class IrcBot:
                 else:
                     raise IOError("Server closed the connection!")
 
-            lines = data.decode(self.encoding, errors='replace').split("\r\n")
+            lines = data.decode(self.encoding, errors="replace").split("\r\n")
             self._linebuffer.extend(lines)
 
         line = self._linebuffer.popleft()
 
         if autoreply_to_ping and line.startswith("PING"):
             await self._send(line.replace("PING", "PONG", 1))
-            return await self._recv_line(autoreply_to_ping=True, skip_empty_lines=skip_empty_lines)
+            return await self._recv_line(
+                autoreply_to_ping=True, skip_empty_lines=skip_empty_lines
+            )
         elif skip_empty_lines and (not line):
-            return await self._recv_line(autoreply_to_ping=autoreply_to_ping, skip_empty_lines=True)
+            return await self._recv_line(
+                autoreply_to_ping=autoreply_to_ping, skip_empty_lines=True
+            )
         else:
             return line
 
@@ -169,8 +178,17 @@ class IrcBot:
                 break
         return Message(sender, command, args)
 
-    async def connect(self, nick, host, port=None, *, sasl_username=None, sasl_password=None, sasl_mechanism="PLAIN",
-                      enable_ssl=False):
+    async def connect(
+        self,
+        nick,
+        host,
+        port=None,
+        *,
+        sasl_username=None,
+        sasl_password=None,
+        sasl_mechanism="PLAIN",
+        enable_ssl=False,
+    ):
         """
         Connects to an IRC server.
 
@@ -195,7 +213,9 @@ class IrcBot:
         if port is None:
             port = 6697 if enable_ssl else 6667
 
-        self._sock = await curio.open_connection(host, port, ssl=enable_ssl, server_hostname=host)
+        self._sock = await curio.open_connection(
+            host, port, ssl=enable_ssl, server_hostname=host
+        )
 
         # We need to track if we started capability negotiation to finish it.
         capability_negotation_started = False
@@ -234,20 +254,30 @@ class IrcBot:
                     if sasl_username is None:
                         query = f"\0{self.nick}\0{sasl_password}"
                     else:
-                        query = f"{sasl_username}\0{self.nick}\0{sasl_password}"
+                        query = (
+                            f"{sasl_username}\0{self.nick}\0{sasl_password}"
+                        )
                 else:
-                    raise ValueError(f"SASL mechanism {sasl_mechanism!r} is not supported.")
+                    raise ValueError(
+                        f"SASL mechanism {sasl_mechanism!r} is not supported."
+                    )
 
-                b64_query = base64.b64encode(query.encode("utf-8")).decode("utf-8")
+                b64_query = base64.b64encode(query.encode("utf-8")).decode(
+                    "utf-8"
+                )
 
-                await self._send_in_chunks("AUTHENTICATE", b64_query, chunk_length=400)
+                await self._send_in_chunks(
+                    "AUTHENTICATE", b64_query, chunk_length=400
+                )
             elif msg.command == "900":  # RPL_LOGGEDIN
                 if capability_negotation_started:
                     await self._send("CAP", "END")
             elif msg.command == "904":  # RPL_SASLFAILED
                 raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
-                raise ValueError(f"The nickname {self.nick!r} is already in use.")
+                raise ValueError(
+                    f"The nickname {self.nick!r} is already in use."
+                )
             elif msg.command == "432":  # ERR_ERRONEUSNICKNAME
                 raise ValueError(f"The nickname {self.nick!r} is erroneous.")
             elif msg.command == "001":  # RPL_WELCOME
@@ -292,8 +322,9 @@ class IrcBot:
         This is the same as writing "/me some action" on a regular IRC client.
         """
 
-        await self._send("PRIVMSG", recipient,
-                         ":\x01ACTION {}\x01".format(action))
+        await self._send(
+            "PRIVMSG", recipient, ":\x01ACTION {}\x01".format(action)
+        )
 
     async def mainloop(self):
         """
@@ -306,8 +337,7 @@ class IrcBot:
             # Keep track of who's in each channel.
             if msg.command == "353":  # RPL_NAMREPLY
                 channel = msg.args[2]
-                nicks = [nick.lstrip("@+")
-                         for nick in msg.args[3].split()]
+                nicks = [nick.lstrip("@+") for nick in msg.args[3].split()]
                 self.channel_users.setdefault(channel, set()).update(nicks)
             elif msg.command == "JOIN":
                 channel = msg.args[0]
@@ -329,21 +359,36 @@ class IrcBot:
                     cmd_callbacks = self._command_callbacks.get(command, ())
                     for callback, arg_amount in cmd_callbacks:
                         if arg_amount == NO_SPLITTING:
-                            await g.spawn(callback(self, msg.sender, recipient, " ".join(args)))
-                        elif arg_amount == ANY_ARGUMENTS or len(args) == arg_amount:
-                            await g.spawn(callback(self, msg.sender, recipient, *args))
+                            await g.spawn(
+                                callback(
+                                    self, msg.sender, recipient, " ".join(args)
+                                )
+                            )
+                        elif (
+                            arg_amount == ANY_ARGUMENTS
+                            or len(args) == arg_amount
+                        ):
+                            await g.spawn(
+                                callback(self, msg.sender, recipient, *args)
+                            )
 
                     # RegExp callbacks.
-                    for regexp, regexp_callbacks in self._regexp_callbacks.items():
+                    for (
+                        regexp,
+                        regexp_callbacks,
+                    ) in self._regexp_callbacks.items():
                         for match in regexp.finditer(msg.args[1]):
 
                             for callback in regexp_callbacks:
-                                coro = callback(self, msg.sender, recipient,
-                                                match)
+                                coro = callback(
+                                    self, msg.sender, recipient, match
+                                )
                                 await g.spawn(coro)
 
                 # Message callbacks. (e.g. JOIN, PART, PRIVMSG, ...)
-                message_callbacks = self._message_callbacks.get(msg.command, ())
+                message_callbacks = self._message_callbacks.get(
+                    msg.command, ()
+                )
                 for callback in message_callbacks:
                     await g.spawn(callback(self, msg.sender, *msg.args))
 
@@ -401,9 +446,11 @@ class IrcBot:
         def _inner(func):
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
-            self._command_callbacks.setdefault(command, [])\
-                                   .append((func, arg_amount))
+            self._command_callbacks.setdefault(command, []).append(
+                (func, arg_amount)
+            )
             return func
+
         return _inner
 
     def on_regexp(self, regexp):
@@ -435,7 +482,7 @@ class IrcBot:
         def _inner(func):
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
-            self._regexp_callbacks.setdefault(regexp, [])\
-                                  .append(func)
+            self._regexp_callbacks.setdefault(regexp, []).append(func)
             return func
+
         return _inner
