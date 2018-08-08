@@ -63,7 +63,7 @@ class IrcBot:
             self.state_path = os.path.join(
                 os.path.dirname(__file__), "state.json"
             )
-            
+
         self.nick = None
         self.encoding = encoding
 
@@ -423,7 +423,7 @@ class IrcBot:
 
         The command handler will be given as arguments:
             1. The IrcBot instance.
-            
+
             2. The command Sender.
 
             3. The recipient that should be used to reply to the command.
