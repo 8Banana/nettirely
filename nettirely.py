@@ -63,7 +63,7 @@ class IrcBot:
             self.state_path = os.path.join(
                 os.path.dirname(__file__), "state.json"
             )
-
+            
         self.nick = None
         self.encoding = encoding
 
@@ -78,8 +78,6 @@ class IrcBot:
                 self.state = json.load(f)
         except (ValueError, FileNotFoundError):
             self.state = {}
-
-        atexit.register(self._on_exit)
 
         self._connection_callbacks = []
         self._disconnection_callbacks = []
@@ -286,6 +284,10 @@ class IrcBot:
                 await g.spawn(callback(self))
             await g.join()
 
+        # We should only register disconnection callbacks if connection
+        # actually happens.
+        atexit.register(self._on_exit)
+
     async def join_channel(self, channel):
         """
         Join `channel`.
@@ -387,6 +389,7 @@ class IrcBot:
                 message_callbacks = self._message_callbacks.get(
                     msg.command, ()
                 )
+
                 for callback in message_callbacks:
                     await g.spawn(callback(self, msg.sender, *msg.args))
 
@@ -420,7 +423,7 @@ class IrcBot:
 
         The command handler will be given as arguments:
             1. The IrcBot instance.
-
+            
             2. The command Sender.
 
             3. The recipient that should be used to reply to the command.
