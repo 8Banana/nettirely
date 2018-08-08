@@ -80,7 +80,7 @@ async def factoid_handler(self, sender, recipient, match):
     elif factoid == "join" and len(args) >= 1 and sender.nick in admins:
         await self.join_channel(args[0])
     elif factoid == "quit" and sender.nick in admins:
-        self.running = False
+        await self.quit()
     elif factoid == "np" and lastfm_api_key is not None:
         lastfm_user = args[0] if len(args) >= 1 else sender.nick
 

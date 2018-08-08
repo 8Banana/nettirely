@@ -16,8 +16,6 @@ Message = collections.namedtuple("Message", ["sender", "command", "args"])
 ANY_ARGUMENTS = -1  # any amount of arguments, fully split
 NO_SPLITTING = -2  # any amount of arguments, no splitting
 
-ALWAYS_CALLBACK_PRIVMSG = True
-
 
 def _create_callback_registration(key):
     def _inner(self, func):
@@ -50,9 +48,6 @@ class IrcBot:
                     You can change this either on the class or on an instance.
     """
 
-    state_path = os.path.join(os.path.dirname(__file__), "state.json")
-    quit_reason = "Goodbye!"
-
     def __init__(self, encoding="utf-8", state_path=None):
         """
         Initializes an IrcBot instance.
@@ -63,15 +58,17 @@ class IrcBot:
 
         if state_path is not None:
             self.state_path = state_path
+        else:
+            self.state_path = os.path.join(os.path.dirname(__file__), "state.json")
 
         self.nick = None
         self.encoding = encoding
-        self.running = True
-
-        self._linebuffer = collections.deque()
-        self._sock = None
 
         self.channel_users = {}
+
+        self._running = True
+        self._linebuffer = collections.deque()
+        self._sock = None
 
         try:
             with open(self.state_path) as f:
@@ -175,7 +172,22 @@ class IrcBot:
     async def connect(self, nick, host, port=None, *, sasl_username=None, sasl_password=None, sasl_mechanism="PLAIN",
                       enable_ssl=False):
         """
-        Connects to an IRC server specified by host and port with a given nick.
+        Connects to an IRC server.
+
+        The arguments `host` and `port` specify the server`s hostname and port.
+        The argument `host` is also passed as `server_hostname` to `curio.open_connection`.
+
+        The argument `nick` is used both as nickname and as username/realname.
+        Nota bene: Any non-alphanumeric characters are filtered from `nick`
+        to construct the username/realname.
+
+        The arguments `sasl_username`, `sasl_password`, and `sasl_mechanism`
+        are used to specify settings for SASL. It is usually enough to only
+        set `sasl_password`, seeing as the only mechanism supported is PLAIN
+        and the username only matters if you are part of a NickServ GROUP.
+
+        The argument `enable_ssl` specifies if TLS is used for connection with the server.
+        If the argument `port` is not given, it also modifies its default value.
         """
 
         self.nick = nick
@@ -192,6 +204,10 @@ class IrcBot:
         if sasl_password is not None:
             capability_negotation_started = True
             await self._send("CAP", "REQ", "sasl")
+
+        # NOTE: If you are adding more things here that require capabilities,
+        # use a separate "CAP REQ" message for each capability, unless it
+        # makes sense to group them together.
 
         username = "".join(c for c in self.nick if c.isalpha())
         await self._send("NICK", self.nick)
@@ -243,22 +259,37 @@ class IrcBot:
             await g.join()
 
     async def join_channel(self, channel):
+        """
+        Join `channel`.
+        """
         await self._send("JOIN", channel)
 
     async def kick(self, channel, nickname, reason):
+        """
+        Kick `nickname` from `channel` for `reason`.
+        """
         await self._send("KICK", channel, nickname, ":" + reason)
 
     async def send_notice(self, recipient, text):
+        """
+        Send a notice `text` to `recipient`.
+
+        Nota bene: If you send a notice to a channel whose text is prefixed with
+        "[{channel}] " most clients will display it as a Channel notice.
+        """
         await self._send("NOTICE", recipient, ":" + text)
 
     async def send_privmsg(self, recipient, text):
+        """
+        Send a privmsg `text` to `recipient`.
+        """
         await self._send("PRIVMSG", recipient, ":" + text)
 
     async def send_action(self, recipient, action):
         """
-        Sends an action to a recipient.
+        Sends an action `action` to `recipient`.
 
-        This is akin to doing "/me some action" on a regular IRC client.
+        This is the same as writing "/me some action" on a regular IRC client.
         """
 
         await self._send("PRIVMSG", recipient,
@@ -266,14 +297,13 @@ class IrcBot:
 
     async def mainloop(self):
         """
-        Handles keeping the connection alive and event handlers.
+        Handles keeping the connection alive and dispatching event handlers.
         """
 
-        while self.running:
-            line = await self._recv_line()
-            msg = self._split_line(line)
+        while self._running:
+            msg = self._split_line(await self._recv_line())
 
-            # The following block handles self.channel_users
+            # Keep track of who's in each channel.
             if msg.command == "353":  # RPL_NAMREPLY
                 channel = msg.args[2]
                 nicks = [nick.lstrip("@+")
@@ -288,46 +318,38 @@ class IrcBot:
                 nick = msg.sender.nick
                 self.channel_users.setdefault(channel, set()).discard(nick)
 
-            callbacks = self._message_callbacks.get(msg.command, ())
             async with curio.TaskGroup() as g:
-                spawn_callbacks = True
                 if msg.command == "PRIVMSG":
                     recipient = msg.args[0]
                     if recipient == self.nick:
                         recipient = msg.sender.nick
 
+                    # Command callbacks. (e.g. !update, !commit, !parrot, ...)
                     command, *args = msg.args[1].strip().split(" ")
                     cmd_callbacks = self._command_callbacks.get(command, ())
                     for callback, arg_amount in cmd_callbacks:
                         if arg_amount == NO_SPLITTING:
-                            spawn_callbacks = False
-                            coro = callback(self, msg.sender, recipient,
-                                            " ".join(args))
-                            await g.spawn(coro)
-                        elif arg_amount == ANY_ARGUMENTS or \
-                                len(args) == arg_amount:
-                            spawn_callbacks = False
-                            coro = callback(self, msg.sender, recipient,
-                                            *args)
-                            await g.spawn(coro)
+                            await g.spawn(callback(self, msg.sender, recipient, " ".join(args)))
+                        elif arg_amount == ANY_ARGUMENTS or len(args) == arg_amount:
+                            await g.spawn(callback(self, msg.sender, recipient, *args))
 
+                    # RegExp callbacks.
                     for regexp, regexp_callbacks in self._regexp_callbacks.items():
                         for match in regexp.finditer(msg.args[1]):
-                            spawn_callbacks = False
 
                             for callback in regexp_callbacks:
                                 coro = callback(self, msg.sender, recipient,
                                                 match)
                                 await g.spawn(coro)
 
-                if ALWAYS_CALLBACK_PRIVMSG or spawn_callbacks:
-                    # Sometimes we don't want to spawn the PRIVMSG callbacks if
-                    # this is a command.
-                    for callback in callbacks:
-                        await g.spawn(callback(self, msg.sender, *msg.args))
-                await g.join()
+                # Message callbacks. (e.g. JOIN, PART, PRIVMSG, ...)
+                message_callbacks = self._message_callbacks.get(msg.command, ())
+                for callback in message_callbacks:
+                    await g.spawn(callback(self, msg.sender, *msg.args))
 
-        await self._send("QUIT", ":" + self.quit_reason)
+    async def quit(self, reason="Goodbye!"):
+        self._running = False
+        await self._send("QUIT", ":" + reason)
 
     def on_connect(self, func):
         if not inspect.iscoroutinefunction(func):
@@ -348,18 +370,26 @@ class IrcBot:
 
     def on_command(self, command, arg_amount=ANY_ARGUMENTS):
         """
-        Creates a decorator that registers a command handler.
+        Create a decorator that registers a command handler.
 
-        The argument command must include the prefix.
+        If you want a prefix on your command, such as in "!update", you must
+        add one manually to the `command` argument.
 
-        The command handler takes as arguments:
-            1. The bot instance
-            2. The command sender.
-            3. The command recipient, usually a channel.
+        The command handler will be given as arguments:
+            1. The IrcBot instance.
+
+            2. The command Sender.
+
+            3. The recipient that should be used to reply to the command.
+               If the command was sent to a channel the bot is in, this
+               argment will be that channel.
+               If the  command was sent as a private message to the bot, this
+               argument will be the sender's nickname.
+
             4. Any arguments that came with the command,
-               split depending on the arg_amount argument.
+               split depending on the `arg_amount` argument.
 
-        As an example, to register a command that looks like this:
+        e.g: To register a command that looks like this:
             !slap nickname
 
         You'd write something like this:
@@ -378,17 +408,26 @@ class IrcBot:
 
     def on_regexp(self, regexp):
         """
-        Creates a decorator that registers a regexp command handler.
+        Create a decorator that registers a RegExp command handler.
 
         The regexp command handler takes as arguments:
-            1. The bot instance
-            2. The command sender
-            3. The command recipient, usually a channel
-            4. The match object, for any groups you might wanna extract.
+            1. The IrcBot instance.
 
-        The regexp is searched, not just matched.
-        Your handler might get called multiple times per message,
-        depending on the amount of matches.
+            2. The command Sender.
+
+            3. The recipient that should be used to reply to the message.
+               If the command was sent to a channel the bot is in, this
+               argment will be that channel.
+               If the  command was sent as a private message to the bot, this
+               argument will be the sender's nickname.
+
+            4. The RegExp match object.
+
+        The regexp is `re.search`ed, not `re.match`ed.
+
+        Your handler will be called once per match per message.
+        This means that your handler may be called more than
+        once per message, if the RegExp matches two or more times.
         """
 
         regexp = re.compile(regexp)

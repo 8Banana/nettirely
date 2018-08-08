@@ -145,6 +145,7 @@ async def add_spammer(self, sender, source, spammer_nickname):
     for line in source_logs:
         if " <" in line and " >" in line:
             nickname, message = line.split(" <", 1)[1].split("> ", 1)
+            print(repr(nickname), repr(message))
             if nickname == spammer_nickname:
                 first_spammer_message = message
                 break
