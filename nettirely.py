@@ -76,8 +76,6 @@ class IrcBot:
         except (ValueError, FileNotFoundError):
             self.state = {}
 
-        atexit.register(self._on_exit)
-
         self._connection_callbacks = []
         self._disconnection_callbacks = []
 
@@ -257,6 +255,10 @@ class IrcBot:
             for callback in self._connection_callbacks:
                 await g.spawn(callback(self))
             await g.join()
+
+        # We should only register disconnection callbacks if connection
+        # actually happens.
+        atexit.register(self._on_exit)
 
     async def join_channel(self, channel):
         """
