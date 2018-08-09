@@ -11,11 +11,12 @@ cache: pip
 install:
   - pip install .
   - pip install -r examples/requirements.txt
-  - pip install pylint
+  - pip install pylint black
 
 script:
   - python3 -m unittest --verbose
   - pylint nettirely.py examples
+  - black --check
 
 notifications:
   email:

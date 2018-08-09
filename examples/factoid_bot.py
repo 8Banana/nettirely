@@ -34,23 +34,27 @@ async def factoid_handler(self, sender, recipient, match):
 
     if factoid == "defact" and len(args) >= 1:
         factoids[args[0]] = " ".join(args[1:])
-        await self.send_privmsg(recipient,
-                                f"{nick}: Defined factoid {args[0]!r}")
+        await self.send_privmsg(
+            recipient, f"{nick}: Defined factoid {args[0]!r}"
+        )
         await curio.run_in_thread(self.save_state)
     elif factoid == "delfact" and len(args) >= 1:
         factoids = bot.state.setdefault("factoids", {})
         if factoids.pop(args[0], None) is not None:
-            await self.send_privmsg(recipient, f"{nick}: Removed factoid {args[0]!r}")
+            await self.send_privmsg(
+                recipient, f"{nick}: Removed factoid {args[0]!r}"
+            )
             await curio.run_in_thread(self.save_state)
         else:
-            await self.send_privmsg(recipient, f"{nick}: No such factoid exists")
+            await self.send_privmsg(
+                recipient, f"{nick}: No such factoid exists"
+            )
     elif factoid == "defadmin" and nick in admins and len(args) >= 1:
         for user in args:
             if user not in admins:
                 admins.append(user)
         users = ", ".join(args)
-        await self.send_privmsg(recipient,
-                                f"{nick}: Added admins {users}")
+        await self.send_privmsg(recipient, f"{nick}: Added admins {users}")
         await curio.run_in_thread(self.save_state)
     elif factoid == "deladmin" and nick in admins and len(args) >= 1:
         for user in args:
@@ -59,13 +63,11 @@ async def factoid_handler(self, sender, recipient, match):
             except ValueError:
                 pass
         users = ", ".join(args)
-        await self.send_privmsg(recipient,
-                                f"{nick}: Removed admins {users}")
+        await self.send_privmsg(recipient, f"{nick}: Removed admins {users}")
         await curio.run_in_thread(self.save_state)
     elif factoid == "setapikey" and nick in admins and len(args) >= 1:
         bot.state["lastfm_api_key"] = args[0]
-        await self.send_privmsg(recipient,
-                                f"{nick}: lastfm api key updated")
+        await self.send_privmsg(recipient, f"{nick}: lastfm api key updated")
         await curio.run_in_thread(self.save_state)
     elif factoid == "factoids":
         url = await create_termbin(" ".join(factoids))
@@ -75,8 +77,9 @@ async def factoid_handler(self, sender, recipient, match):
         await self.send_privmsg(recipient, url)
     elif factoid == "at" and len(args) >= 2:
         if args[1] in factoids:
-            await self.send_privmsg(recipient,
-                                    f"{args[0]}: {factoids[args[1]]}")
+            await self.send_privmsg(
+                recipient, f"{args[0]}: {factoids[args[1]]}"
+            )
     elif factoid == "join" and len(args) >= 1 and sender.nick in admins:
         await self.join_channel(args[0])
     elif factoid == "quit" and sender.nick in admins:
@@ -84,12 +87,15 @@ async def factoid_handler(self, sender, recipient, match):
     elif factoid == "np" and lastfm_api_key is not None:
         lastfm_user = args[0] if len(args) >= 1 else sender.nick
 
-        resp = await asks.get("http://ws.audioscrobbler.com/2.0/", params={
-            "method": "user.getrecenttracks",
-            "user": lastfm_user,
-            "api_key": lastfm_api_key,
-            "limit": "1",
-        })
+        resp = await asks.get(
+            "http://ws.audioscrobbler.com/2.0/",
+            params={
+                "method": "user.getrecenttracks",
+                "user": lastfm_user,
+                "api_key": lastfm_api_key,
+                "limit": "1",
+            },
+        )
 
         soup = bs4.BeautifulSoup(resp.text, "xml")
 
@@ -101,7 +107,9 @@ async def factoid_handler(self, sender, recipient, match):
             # This happens when there are no tracks returned for some reason.
             return
 
-        msg = f"{sender.nick}: {lastfm_user} is listening to {artist} - {title}"
+        msg = (
+            f"{sender.nick}: {lastfm_user} is listening to {artist} - {title}"
+        )
         if album:
             msg += f" (from {album})"
         await self.send_privmsg(recipient, msg)
