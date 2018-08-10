@@ -16,7 +16,7 @@ install:
 script:
   - python3 -m unittest --verbose
   - pylint nettirely.py examples
-  - black --check
+  - black --check .
 
 notifications:
   email:
@@ -32,5 +32,5 @@ notifications:
       - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message} %{build_url}'
 
 matrix:
-  allows_failures:
+  allow_failures:
     - python: 'nightly'
