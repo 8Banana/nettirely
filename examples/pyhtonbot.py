@@ -149,6 +149,15 @@ async def send_log(self, sender, channel):
     await self.send_privmsg(channel, f"{sender.nick}: {result}")
 
 
+FREENODE_SPAM_PREFIXES = (
+    "After the acquisition by Private Internet Access, Freenode is now being "
+    "used to push ICO scams ",
+    'Christel just posted this "denial" on the freenode',
+    "Consider Andrew Lee's involvement, Andrew Lee is Christel's "
+    "boss at London Trust Media",
+)
+
+
 @bot.on_connect
 async def initialize_spammer_database(self):
     self.state.setdefault("spammer_prefixes", FREENODE_SPAM_PREFIXES)
@@ -158,9 +167,8 @@ async def initialize_spammer_database(self):
 async def add_spammer(self, sender, source, spammer_nickname):
     source_logs = self.state["logs"][source]
     for line in source_logs:
-        if " <" in line and " >" in line:
+        if " <" in line and "> " in line:
             nickname, message = line.split(" <", 1)[1].split("> ", 1)
-            print(repr(nickname), repr(message))
             if nickname == spammer_nickname:
                 first_spammer_message = message
                 break
@@ -180,6 +188,7 @@ async def add_spammer(self, sender, source, spammer_nickname):
 async def add_spam_prefix(self, sender, source, spam_prefix):
     if sender.nick in COMBINED_USERS:
         self.state["spammer_prefixes"].append(spam_prefix)
+        await self.send_privmsg(source, f"Added {spam_prefix!r} as a prefix.")
 
 
 @bot.on_command("!removespamprefix", NO_SPLITTING)
@@ -511,15 +520,6 @@ async def cans(self, sender, recipient, *_):
     for regexp, response in canned_responses.items():
         await self.send_privmsg(sender.nick, f"{regexp!r} -> {response!r}")
         await curio.sleep(1 / 10)  # 10 cans per second.
-
-
-FREENODE_SPAM_PREFIXES = (
-    "After the acquisition by Private Internet Access, Freenode is now being "
-    "used to push ICO scams ",
-    'Christel just posted this "denial" on the freenode',
-    "Consider Andrew Lee's involvement, Andrew Lee is Christel's"
-    "boss at London Trust Media",
-)
 
 
 async def main():
