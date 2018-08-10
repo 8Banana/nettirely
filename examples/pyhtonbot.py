@@ -118,15 +118,12 @@ async def append_part_to_log(self, sender, channel, reason=None):
 
 @bot.on_quit
 async def append_quit_to_log(self, sender, reason=None):
+    logs = self.state["logs"]
+
     if reason is None:
         reason = "No reason."
-
     now = datetime.datetime.now().strftime("%X")
-
-    # Can we know what channels to show this in?
     msg = f"[{now}] {sender.nick} quit ({reason})"
-
-    logs = self.state["logs"]
 
     for channel, users in self.channel_users.items():
         if sender.nick in users:
@@ -134,19 +131,37 @@ async def append_quit_to_log(self, sender, reason=None):
 
 
 @bot.on_privmsg
-async def append_privmsg_to_log(self, sender, channel, message):
-    now = datetime.datetime.now().strftime("%X")
+async def append_privmsg_to_log(self, sender, recipient, message):
     logs = self.state["logs"]
-    logs[channel].append(f"[{now}] <{sender.nick}> {message}")
+
+    now = datetime.datetime.now().strftime("%X")
+
+    # If we are the reply recipient, this means we are in a private message
+    # conversation. We want to change the key to the logs dictionary to be the
+    # sender's nickname, else we would group all private messages under one
+    # key. We don`t need to adjust the key later, in `send_log`, because the
+    # reply recipient is already the sender's nick or a channel.
+    if recipient == self.nick:
+        recipient = sender.nick
+
+    logs[recipient].append(f"[{now}] <{sender.nick}> {message}")
 
 
 @bot.on_command("!log", 0)
-async def send_log(self, sender, channel):
-    msg = f"{sender.nick}: Uploading logs, this might take a second..."
-    await self.send_privmsg(channel, msg)
+async def send_log(self, sender, recipient):
     logs = self.state["logs"]
-    result = await upload_log(logs[channel])
-    await self.send_privmsg(channel, f"{sender.nick}: {result}")
+
+    if logs[recipient]:
+        await self.send_privmsg(
+            recipient,
+            f"{sender.nick}: Uploading logs, this might take a second...",
+        )
+        result = await upload_log(logs[recipient])
+        await self.send_privmsg(recipient, f"{sender.nick}: {result}")
+    else:
+        await self.send_privmsg(
+            recipient, f"{sender.nick}: There are no logs to be uploaded."
+        )
 
 
 @bot.on_connect
