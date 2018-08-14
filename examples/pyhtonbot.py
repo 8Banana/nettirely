@@ -591,4 +591,3 @@ if __name__ == "__main__":
         curio.run(main)
     except KeyboardInterrupt:
         pass
-
