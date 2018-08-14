@@ -164,18 +164,30 @@ async def send_log(self, sender, recipient):
         )
 
 
-FREENODE_SPAM_PREFIXES = (
+FREENODE_SPAM_PREFIXES = [
     "After the acquisition by Private Internet Access, Freenode is now being "
     "used to push ICO scams ",
     'Christel just posted this "denial" on the freenode',
     "Consider Andrew Lee's involvement, Andrew Lee is Christel's "
     "boss at London Trust Media",
-)
+]
 
 
 @bot.on_connect
 async def initialize_spammer_database(self):
-    self.state.setdefault("spammer_prefixes", FREENODE_SPAM_PREFIXES)
+    if "spammer_prefixes" in self.state:
+        self.state["spammer_regexps"] = [
+            "^" + re.escape(prefix)
+            for prefix in self.state.pop("spammer_prefixes")
+        ]
+    else:
+        self.state.setdefault(
+            "spammer_regexps",
+            [
+                "^" + re.escape(FREENODE_SPAM_PREFIXES)
+                for prefix in FREENODE_SPAM_PREFIXES
+            ],
+        )
 
 
 @bot.on_command("!addspammer", 1)
@@ -196,36 +208,38 @@ async def add_spammer(self, sender, source, spammer_nickname):
     await self.send_privmsg(
         source, f"Added {first_spammer_message!r} as a prefix."
     )
-    self.state["spammer_prefixes"].append(first_spammer_message)
+    self.state["spammer_regexps"].append(
+        "^" + re.escape(first_spammer_message)
+    )
 
 
-@bot.on_command("!addspamprefix", NO_SPLITTING)
-async def add_spam_prefix(self, sender, source, spam_prefix):
+@bot.on_command("!addspamregexp", NO_SPLITTING)
+async def add_spam_regexp(self, sender, source, spam_regexp):
     if sender.nick in COMBINED_USERS:
-        self.state["spammer_prefixes"].append(spam_prefix)
-        await self.send_privmsg(source, f"Added {spam_prefix!r} as a prefix.")
+        self.state["spammer_regexps"].append(spam_prefix)
+        await self.send_privmsg(source, f"Added {spam_regexp!r} as a regexp.")
 
 
-@bot.on_command("!removespamprefix", NO_SPLITTING)
-async def remove_spam_prefix(self, sender, source, spam_prefix):
-    try:
-        if sender.nick in COMBINED_USERS:
-            self.state["spammer_prefixes"].remove(spam_prefix)
-    except ValueError:
-        pass
+@bot.on_command("!removespamregexp", NO_SPLITTING)
+async def remove_spam_regexp(self, sender, source, spam_regexp):
+    if sender.nick in COMBINED_USERS:
+        try:
+            self.state["spammer_regexps"].remove(spam_regexp)
+        except ValueError:
+            pass
 
 
 @bot.on_privmsg
 async def kick_spammers(self, sender, channel, message):
-    for spam_pattern in self.state["spammer_prefixes"]:
-        if message.startswith(spam_pattern):
+    for spam_pattern in self.state["spammer_regexps"]:
+        if re.search(spam_pattern, message) is not None:
             await self.kick(channel, sender.nick, "spamming detected")
 
 
-@bot.on_command("!prefixes", NO_SPLITTING)
-async def send_prefixes(self, sender, source, _):
-    for index, prefix in enumerate(self.state["spammer_prefixes"]):
-        await self.send_privmsg(source, f"{index + 1}. {prefix!r}")
+@bot.on_command("!spammer_regexps", NO_SPLITTING)
+async def send_spammer_regexps(self, sender, source, _):
+    for index, regexp in enumerate(self.state["spammer_regexps"]):
+        await self.send_privmsg(source, f"{index + 1}. {regexp!r}")
 
 
 def _pick_word(word_frequencies):
