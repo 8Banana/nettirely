@@ -216,7 +216,7 @@ async def add_spammer(self, sender, source, spammer_nickname):
 @bot.on_command("!addspamregexp", NO_SPLITTING)
 async def add_spam_regexp(self, sender, source, spam_regexp):
     if sender.nick in COMBINED_USERS:
-        self.state["spammer_regexps"].append(spam_prefix)
+        self.state["spammer_regexps"].append(spam_regexp)
         await self.send_privmsg(source, f"Added {spam_regexp!r} as a regexp.")
 
 
@@ -591,3 +591,4 @@ if __name__ == "__main__":
         curio.run(main)
     except KeyboardInterrupt:
         pass
+
