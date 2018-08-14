@@ -184,7 +184,7 @@ async def initialize_spammer_database(self):
         self.state.setdefault(
             "spammer_regexps",
             [
-                "^" + re.escape(FREENODE_SPAM_PREFIXES)
+                "^" + re.escape(prefix)
                 for prefix in FREENODE_SPAM_PREFIXES
             ],
         )
