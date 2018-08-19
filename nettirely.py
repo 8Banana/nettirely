@@ -1,5 +1,6 @@
 import atexit
 import collections
+import logging
 import inspect
 import json
 import os
@@ -49,6 +50,8 @@ class IrcBot:
                     You can change this either on the class or on an instance.
     """
 
+    logger = logging.getLogger(__name__)
+
     def __init__(self, encoding="utf-8", state_path=None):
         """
         Initializes an IrcBot instance.
@@ -92,6 +95,9 @@ class IrcBot:
         # It would've been possible to also allow coroutines, however that
         # would involve creating a new curio Kernel.
         for callback in self._disconnection_callbacks:
+            self.logger.debug(
+                "Calling disconnection callback %s ...", callback
+            )
             callback(self)
 
         self.save_state()
@@ -102,11 +108,13 @@ class IrcBot:
 
         This method is only safe if all the state is JSON encodeable.
         """
+        self.logger.debug("Writing the state to a swap file ...")
         with open(self.state_path + ".tmp", "w") as f:
             json.dump(self.state, f)
             f.flush()
             os.fsync(f.fileno())
 
+        self.logger.info("Writing the state file ...")
         os.rename(self.state_path + ".tmp", self.state_path)
 
     async def _send(self, *parts):
@@ -211,15 +219,18 @@ class IrcBot:
         if port is None:
             port = 6697 if enable_ssl else 6667
 
+        self.logger.info("Opening connection to %s:%s ...", host, port)
         self._sock = await curio.open_connection(
             host, port, ssl=enable_ssl, server_hostname=host
         )
+        self.logger.info("Opened connection to %s:%s", host, port)
 
         # We need to track if we started capability negotiation to finish it.
         capability_negotation_started = False
 
         # Ask for SASL if we need it.
         if sasl_password is not None:
+            self.logger.info("Starting negotation for SASL ...")
             capability_negotation_started = True
             await self._send("CAP", "REQ", "sasl")
 
@@ -227,6 +238,7 @@ class IrcBot:
         # use a separate "CAP REQ" message for each capability, unless it
         # makes sense to group them together.
 
+        self.logger.info("Sending authentication ... ")
         username = "".join(c for c in self.nick if c.isalpha())
         await self._send("NICK", self.nick)
         await self._send("USER", username, "0", "*", ":" + username)
@@ -241,11 +253,13 @@ class IrcBot:
                     acknowledged = set(msg.args[-1].split())
 
                     if "sasl" in acknowledged:
+                        self.logger.info("SASL was acknowleged.")
                         await self._send("AUTHENTICATE", sasl_mechanism)
                 elif subcommand == "NAK":
                     rejected = set(msg.args[-1].split())
 
                     if "sasl" in rejected:
+                        self.logger.info("SASL was rejected.")
                         raise ValueError("The server does not support SASL.")
             elif msg.command == "AUTHENTICATE":
                 if sasl_mechanism == "PLAIN":
@@ -266,38 +280,55 @@ class IrcBot:
                     "AUTHENTICATE", b64_query, chunk_length=400
                 )
             elif msg.command == "900":  # RPL_LOGGEDIN
+                self.logger.info("Logged in with SASL.")
                 if capability_negotation_started:
                     await self._send("CAP", "END")
             elif msg.command == "904":  # RPL_SASLFAILED
+                self.logger.exception("Failed to log in with SASL.")
                 raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
+                self.logger.exception(
+                    "Nickname %r is already in use.", self.nick
+                )
                 raise ValueError(
                     f"The nickname {self.nick!r} is already in use."
                 )
             elif msg.command == "432":  # ERR_ERRONEUSNICKNAME
+                self.logger.critical("Nickname %r is erroneous.", self.nick)
                 raise ValueError(f"The nickname {self.nick!r} is erroneous.")
             elif msg.command == "001":  # RPL_WELCOME
+                self.logger.info("Recieved welcome.")
                 break
 
         async with curio.TaskGroup() as g:
             for callback in self._connection_callbacks:
+                self.logger.debug(
+                    "Spawning connection callback %r ...", callback
+                )
                 await g.spawn(callback(self))
+            self.logger.debug("Waiting on connection callbacks ... ")
             await g.join()
+            self.logger.debug("Everything went fine.")
 
         # We should only register disconnection callbacks if connection
         # actually happens.
+        self.logger.debug("Registering exit callbacks ...")
         atexit.register(self._on_exit)
 
     async def join_channel(self, channel):
         """
         Join `channel`.
         """
+        self.logger.info("Joining %r ...", channel)
         await self._send("JOIN", channel)
 
     async def kick(self, channel, nickname, reason):
         """
         Kick `nickname` from `channel` for `reason`.
         """
+        self.logger.info(
+            "Kicking %r from %r because %r ...", nickname, channel, reason
+        )
         await self._send("KICK", channel, nickname, ":" + reason)
 
     async def send_notice(self, recipient, text):
@@ -307,12 +338,14 @@ class IrcBot:
         Nota bene: If you send a notice to a channel whose text is prefixed with
         "[{channel}] " most clients will display it as a Channel notice.
         """
+        self.logger.debug("Sending notice %r to %r ...", text, recipient)
         await self._send("NOTICE", recipient, ":" + text)
 
     async def send_privmsg(self, recipient, text):
         """
         Send a privmsg `text` to `recipient`.
         """
+        self.logger.debug("Sending privmsg %r to %r ...", text, recipient)
         await self._send("PRIVMSG", recipient, ":" + text)
 
     async def send_action(self, recipient, action):
@@ -322,6 +355,7 @@ class IrcBot:
         This is the same as writing "/me some action" on a regular IRC client.
         """
 
+        self.logger.debug("Sending action %r to %r ...", text, recipient)
         await self._send(
             "PRIVMSG", recipient, ":\x01ACTION {}\x01".format(action)
         )
@@ -333,20 +367,26 @@ class IrcBot:
 
         while self._running:
             msg = self._split_line(await self._recv_line())
+            self.logger.debug("Recieved message %r", msg)
 
             # Keep track of who's in each channel.
             if msg.command == "353":  # RPL_NAMREPLY
                 channel = msg.args[2]
                 nicks = [nick.lstrip("@+") for nick in msg.args[3].split()]
                 self.channel_users.setdefault(channel, set()).update(nicks)
+                self.logger.info(
+                    "Users in %r: %r", channel, self.channel_users[channel]
+                )
             elif msg.command == "JOIN":
                 channel = msg.args[0]
                 nick = msg.sender.nick
                 self.channel_users.setdefault(channel, set()).add(nick)
+                self.logger.info("%r joined %r", nick, channel)
             elif msg.command == "PART":
                 channel = msg.args[0]
                 nick = msg.sender.nick
                 self.channel_users.setdefault(channel, set()).discard(nick)
+                self.logger.info("%r left %r", nick, channel)
 
             async with curio.TaskGroup() as g:
                 if msg.command == "PRIVMSG":
@@ -359,6 +399,14 @@ class IrcBot:
                     cmd_callbacks = self._command_callbacks.get(command, ())
                     for callback, arg_amount in cmd_callbacks:
                         if arg_amount == NO_SPLITTING:
+                            self.logger.debug(
+                                "Spawning command callback "
+                                "%s(self, %r, %r, %r) for command %r",
+                                callback.__name__,
+                                msg.sender,
+                                recipient,
+                                " ".join(args),
+                            )
                             await g.spawn(
                                 callback(
                                     self, msg.sender, recipient, " ".join(args)
@@ -368,6 +416,14 @@ class IrcBot:
                             arg_amount == ANY_ARGUMENTS
                             or len(args) == arg_amount
                         ):
+                            self.logger.debug(
+                                "Spawning command callback "
+                                "%s(self, %r, %r, *%r) for command %r",
+                                callback.__name__,
+                                msg.sender,
+                                recipient,
+                                args,
+                            )
                             await g.spawn(
                                 callback(self, msg.sender, recipient, *args)
                             )
@@ -380,10 +436,21 @@ class IrcBot:
                         for match in regexp.finditer(msg.args[1]):
 
                             for callback in regexp_callbacks:
-                                coro = callback(
-                                    self, msg.sender, recipient, match
+                                self.logger.debug(
+                                    "Spawning RegExp callback "
+                                    "%s(self, %r, %r, %r) for RegExp %r",
+                                    callback.__name__,
+                                    msg.sender,
+                                    recipient,
+                                    match,
+                                    regexp,
                                 )
-                                await g.spawn(coro)
+
+                                await g.spawn(
+                                    callback(
+                                        self, msg.sender, recipient, match
+                                    )
+                                )
 
                 # Message callbacks. (e.g. JOIN, PART, PRIVMSG, ...)
                 message_callbacks = self._message_callbacks.get(
@@ -391,9 +458,20 @@ class IrcBot:
                 )
 
                 for callback in message_callbacks:
+                    self.logger.debug(
+                        "Spawning message callback "
+                        "%s(self, %r, %r, *%r) for message %r",
+                        callback.__name__,
+                        msg.sender,
+                        recipient,
+                        msg.args,
+                        msg.command,
+                    )
+
                     await g.spawn(callback(self, msg.sender, *msg.args))
 
     async def quit(self, reason="Goodbye!"):
+        self.logger.info("Quitting because %r", reason)
         self._running = False
         await self._send("QUIT", ":" + reason)
 
@@ -447,6 +525,12 @@ class IrcBot:
         def _inner(func):
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
+            self.logger.debug(
+                "Registered function %r (args: %r) for command %r",
+                func,
+                arg_amount,
+                command,
+            )
             self._command_callbacks.setdefault(command, []).append(
                 (func, arg_amount)
             )
@@ -483,6 +567,9 @@ class IrcBot:
         def _inner(func):
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
+            self.logger.debug(
+                "Registered function for RegExp %r", func, regexp
+            )
             self._regexp_callbacks.setdefault(regexp, []).append(func)
             return func
 

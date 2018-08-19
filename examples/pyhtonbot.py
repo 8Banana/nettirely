@@ -5,6 +5,7 @@ We actually use this one on the #8Banana IRC channel :)
 """
 
 import collections
+import logging
 import datetime
 import os
 import random
@@ -49,6 +50,28 @@ FISH = (
 EMPTY_WORD = "__EMPTY__"
 PRECEDING_WORDS = 2
 JSON_TUPLE_SEPARATOR = "\0"
+
+# <Logger initialization>
+stream_handler = logging.StreamHandler(sys.stderr)
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(
+    logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
+)
+IrcBot.logger.addHandler(stream_handler)
+del stream_handler
+
+file_handler = logging.FileHandler("pyhtonbot.log", "a")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(
+    logging.Formatter("[%(levelname)s @ %(asctime)-15s] %(name)s: %(message)s")
+)
+IrcBot.logger.addHandler(file_handler)
+del file_handler
+
+# Needed to set the "max level" for the above handlers. If we don't set this to
+# DEBUG but for example to INFO, all the handlers are limited to INFO.
+IrcBot.logger.setLevel(logging.DEBUG)
+# </Logger initialization>
 
 bot = IrcBot(state_path="pyhtonbot_state.json")
 supervisor = Supervisor("8Banana/nettirely")
@@ -549,6 +572,7 @@ async def cans(self, sender, recipient, *_):
 
 
 async def main():
+
     with supervisor:
         asks.init("curio")
 
