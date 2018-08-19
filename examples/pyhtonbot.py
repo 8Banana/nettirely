@@ -282,16 +282,6 @@ async def initialize_markov_chains(self):
         del self.state["markov_chains"]
 
 
-
-
-
-
-
-
-
-
-
-
 @bot.on_privmsg
 async def update_seen(self, sender, _channel, message):
     seen = self.state.setdefault("seen", {})

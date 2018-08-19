@@ -287,9 +287,7 @@ class IrcBot:
                 self.logger.error("Failed to log in with SASL.")
                 raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
-                self.logger.error(
-                    "Nickname %r is already in use.", self.nick
-                )
+                self.logger.error("Nickname %r is already in use.", self.nick)
                 raise ValueError(
                     f"The nickname {self.nick!r} is already in use."
                 )
