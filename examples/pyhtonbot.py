@@ -6,6 +6,7 @@ We actually use this one on the #8Banana IRC channel :)
 
 import collections
 import logging
+import logging.handlers
 import datetime
 import os
 import random
@@ -60,7 +61,9 @@ stream_handler.setFormatter(
 IrcBot.logger.addHandler(stream_handler)
 del stream_handler
 
-file_handler = logging.FileHandler("pyhtonbot.log", "a")
+file_handler = logging.handlers.TimedRotatingFileHandler(
+    "pyhtonbot.log", when="D", interval=1, backupCount=7
+)
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(
     logging.Formatter("[%(levelname)s @ %(asctime)-15s] %(name)s: %(message)s")

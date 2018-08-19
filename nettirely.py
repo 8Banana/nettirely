@@ -406,6 +406,7 @@ class IrcBot:
                                 msg.sender,
                                 recipient,
                                 " ".join(args),
+                                command,
                             )
                             await g.spawn(
                                 callback(
