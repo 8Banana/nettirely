@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import traceback
-
 import asks
 import bs4
 import curio
 
-import autoupdater
+from supervisor import Supervisor
 from nettirely import IrcBot
 
 bot = IrcBot(state_path="factoid_state.json")
+supervisor = Supervisor("8Banana/nettirely")
 
 
 async def create_termbin(contents):
@@ -114,7 +113,7 @@ async def factoid_handler(self, sender, recipient, match):
             msg += f" (from {album})"
         await self.send_privmsg(recipient, msg)
     elif factoid == "update" and nick in admins:
-        autoupdater.update()
+        supervisor.update()
     else:
         factoids = bot.state.get("factoids", {})
         if factoid in factoids:
@@ -122,22 +121,14 @@ async def factoid_handler(self, sender, recipient, match):
 
 
 async def main():
-    asks.init("curio")
-    autoupdater.initialize()
+    with supervisor:
+        asks.init("curio")
 
-    await bot.connect("factoid_bot8", "chat.freenode.net")
-    await bot.join_channel("#8banana-bottest")
+        await bot.connect("factoid_bot8", "chat.freenode.net")
+        await bot.join_channel("#8banana-bottest")
 
-    while True:
-        try:
-            await bot.mainloop()
-        except OSError:
-            traceback.print_exc()
-            autoupdater.restart()
+        await bot.mainloop()
 
 
 if __name__ == "__main__":
-    try:
-        curio.run(main)
-    except KeyboardInterrupt:
-        pass
+    curio.run(main)

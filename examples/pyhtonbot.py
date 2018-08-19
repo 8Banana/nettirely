@@ -11,14 +11,13 @@ import random
 import re
 import sys
 import time
-import traceback
 import urllib.parse
 
 import asks
 import curio
 from curio import subprocess
 
-import autoupdater
+from supervisor import Supervisor
 from nettirely import IrcBot, NO_SPLITTING
 
 # General bot constants
@@ -52,6 +51,7 @@ PRECEDING_WORDS = 2
 JSON_TUPLE_SEPARATOR = "\0"
 
 bot = IrcBot(state_path="pyhtonbot_state.json")
+supervisor = Supervisor("8Banana/nettirely")
 
 
 @bot.on_command(">>>", NO_SPLITTING)
@@ -183,10 +183,7 @@ async def initialize_spammer_database(self):
     else:
         self.state.setdefault(
             "spammer_regexps",
-            [
-                "^" + re.escape(prefix)
-                for prefix in FREENODE_SPAM_PREFIXES
-            ],
+            ["^" + re.escape(prefix) for prefix in FREENODE_SPAM_PREFIXES],
         )
 
 
@@ -440,7 +437,7 @@ async def autolog_send(self, sender, channel):
 @bot.on_command("!update", NO_SPLITTING)
 async def update(_self, sender, _recipient, _args):
     def worker():
-        autoupdater.update()
+        supervisor.update()
 
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
@@ -462,7 +459,7 @@ async def commit(self, _sender, recipient, _args):
 @bot.on_command("!reload", NO_SPLITTING)
 async def bot_reload(_self, sender, _recipient, _args):
     def worker():
-        autoupdater.restart()
+        supervisor.restart()
 
     if sender.nick in ADMINS:
         await curio.run_in_thread(worker)
@@ -552,42 +549,36 @@ async def cans(self, sender, recipient, *_):
 
 
 async def main():
-    asks.init("curio")
-    autoupdater.initialize()
+    with supervisor:
+        asks.init("curio")
 
-    password = os.environ.get("IRC_PASSWORD")
+        password = os.environ.get("IRC_PASSWORD")
 
-    if len(sys.argv) > 1 and sys.argv[1] == "debug":
-        nickname = os.environ["IRC_NICKNAME"]
-        await bot.connect(
-            nickname,
-            "chat.freenode.net",
-            sasl_password=password,
-            enable_ssl=True,
-        )
-        await bot.join_channel("#8banana-bottest")
-    else:
-        await bot.connect(
-            "pyhtonbot",
-            "chat.freenode.net",
-            sasl_password=password,
-            enable_ssl=True,
-        )
-        await bot.join_channel("#8banana")
-        await bot.join_channel("##learnpython")
-        await bot.join_channel("#lpmc")
-        await bot.join_channel("#learnprogramming")
+        if len(sys.argv) > 1 and sys.argv[1] == "debug":
+            nickname = os.environ["IRC_NICKNAME"]
+            await bot.connect(
+                nickname,
+                "chat.freenode.net",
+                sasl_password=password,
+                enable_ssl=True,
+            )
 
-    while True:
-        try:
-            await bot.mainloop()
-        except BaseException:
-            traceback.print_exc()
-            autoupdater.restart()
+            await bot.join_channel("#8banana-bottest")
+        else:
+            await bot.connect(
+                "pyhtonbot",
+                "chat.freenode.net",
+                sasl_password=password,
+                enable_ssl=True,
+            )
+
+            await bot.join_channel("#8banana")
+            await bot.join_channel("##learnpython")
+            await bot.join_channel("#lpmc")
+            await bot.join_channel("#learnprogramming")
+
+        await bot.mainloop()
 
 
 if __name__ == "__main__":
-    try:
-        curio.run(main)
-    except KeyboardInterrupt:
-        pass
+    curio.run(main)
