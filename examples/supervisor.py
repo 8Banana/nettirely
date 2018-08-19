@@ -4,6 +4,7 @@
 import atexit
 import os
 import urllib.parse
+import logging
 import traceback
 import subprocess
 import sys
@@ -12,6 +13,8 @@ import threading
 import requests
 
 TEN_MINUTES = 1 * 60 * 10
+
+logger = logging.getLogger(__name__)
 
 
 def _get_output(args):
@@ -62,6 +65,8 @@ class Supervisor:
         threading.Thread(target=self._check_for_updates, daemon=True).start()
 
     def restart(self):
+        logger.info("Restarting ... ")
+
         if hasattr(atexit, "_run_exitfuncs"):
             # We're about to leave in a way that's not expected by
             # Python.
@@ -131,8 +136,15 @@ class Supervisor:
 
     def _check_for_updates(self):
         while True:
-            if self._upstream_is_newer() and self.build_state() == "passed":
-                self.restart()
+            if self._upstream_is_newer():
+                logger.info("Upstream is newer than local ...")
+
+                build_state = self.build_state()
+                if build_state == "passed":
+                    logger.info("And the travis build has passed")
+                    self.restart()
+                else:
+                    logger.info("But the build state is %r", build_state)
 
             # This line sleeps until one of the following two conditions:
             #  1. `self.update_check_interval` seconds pass.
@@ -144,7 +156,9 @@ class Supervisor:
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        traceback.print_exception(exc_type, exc_value, exc_tb)
+        if exc_type is not None:
+            logger.exception("Exception was raised in supervised code.")
+            traceback.print_exception(exc_type, exc_value, exc_tb)
 
         self.restart()
 

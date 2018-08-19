@@ -53,12 +53,14 @@ PRECEDING_WORDS = 2
 JSON_TUPLE_SEPARATOR = "\0"
 
 # <Logger initialization>
+handlers = []
+
 stream_handler = logging.StreamHandler(sys.stderr)
 stream_handler.setLevel(logging.INFO)
 stream_handler.setFormatter(
     logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
 )
-IrcBot.logger.addHandler(stream_handler)
+handlers.append(stream_handler)
 del stream_handler
 
 file_handler = logging.handlers.TimedRotatingFileHandler(
@@ -68,12 +70,14 @@ file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(
     logging.Formatter("[%(levelname)s @ %(asctime)-15s] %(name)s: %(message)s")
 )
-IrcBot.logger.addHandler(file_handler)
+handlers.append(file_handler)
 del file_handler
 
 # Needed to set the "max level" for the above handlers. If we don't set this to
 # DEBUG but for example to INFO, all the handlers are limited to INFO.
-IrcBot.logger.setLevel(logging.DEBUG)
+logging.basicConfig(handlers=handlers, level=logging.DEBUG)
+
+del handlers
 # </Logger initialization>
 
 bot = IrcBot(state_path="pyhtonbot_state.json")

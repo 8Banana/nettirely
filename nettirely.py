@@ -284,10 +284,10 @@ class IrcBot:
                 if capability_negotation_started:
                     await self._send("CAP", "END")
             elif msg.command == "904":  # RPL_SASLFAILED
-                self.logger.exception("Failed to log in with SASL.")
+                self.logger.error("Failed to log in with SASL.")
                 raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
-                self.logger.exception(
+                self.logger.error(
                     "Nickname %r is already in use.", self.nick
                 )
                 raise ValueError(
