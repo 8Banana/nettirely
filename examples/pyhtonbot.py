@@ -469,8 +469,8 @@ async def update(_self, sender, _recipient, _args):
         await curio.run_in_thread(worker)
 
 
-@bot.on_command("!commit", NO_SPLITTING)
-async def commit(self, _sender, recipient, _args):
+@bot.on_command("!commit", 0)
+async def commit(self, sender, recipient):
     info = (
         await subprocess.check_output(["git", "log", "-1", "--pretty=%ai\t%B"])
     ).decode("utf-8")
@@ -478,7 +478,16 @@ async def commit(self, _sender, recipient, _args):
     commit_summary = commit_message.splitlines()[0]
 
     await bot.send_privmsg(
-        recipient, f"Updated at {update_time}: {commit_summary!r}"
+        recipient,
+        f"{sender.nick}: Updated at {update_time}: {commit_summary!r}",
+    )
+
+
+@bot.on_command("!status", 0)
+async def build_status(self, sender, recipient):
+    status = await curio.run_in_thread(supervisor.build_status)
+    await bot.send_privmsg(
+        recipient, f"{sender.nick}: The build status is {status!r}"
     )
 
 

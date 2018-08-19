@@ -4,6 +4,7 @@
 import atexit
 import os
 import urllib.parse
+import logging
 import traceback
 import subprocess
 import sys
@@ -97,6 +98,7 @@ class Supervisor:
         try:
             token = os.environ["TRAVIS_TOKEN"]
         except KeyError:
+
             raise LookupError(
                 "No TRAVIS_TOKEN environment variable was found."
             ) from None
@@ -116,7 +118,7 @@ class Supervisor:
         response.raise_for_status()
         return response.json()
 
-    def _travis_build_passes(self):
+    def build_state(self):
         try:
             builds = self._travis_request(
                 "/repo/%s/builds?limit=5&branch.name=%s",
@@ -124,15 +126,13 @@ class Supervisor:
                 self.branch,
             )["builds"]
         except LookupError:
-            return True
+            return "unknown"
 
-        latest_build = builds[0]
-
-        return latest_build["state"] == "passed"
+        return builds[0]["state"]
 
     def _check_for_updates(self):
         while True:
-            if self._upstream_is_newer() and self._travis_build_passes():
+            if self._upstream_is_newer() and self.build_state() == "passed":
                 self.restart()
 
             # This line sleeps until one of the following two conditions:
