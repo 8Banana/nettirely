@@ -47,11 +47,6 @@ FISH = (
     "javascript",
 )
 
-# Markov chain constants
-EMPTY_WORD = "__EMPTY__"
-PRECEDING_WORDS = 2
-JSON_TUPLE_SEPARATOR = "\0"
-
 # <Logger initialization>
 handlers = []
 
@@ -283,77 +278,18 @@ def _pick_word(word_frequencies):
 @bot.on_connect
 async def initialize_markov_chains(self):
     # These two methods are what I like to call "unholy."
-    self.state["markov_chains"] = {
-        user: {
-            tuple(k.split(JSON_TUPLE_SEPARATOR)): v for k, v in chain.items()
-        }
-        for user, chain in self.state.get("markov_chains", {}).items()
-    }
+    if "markov_chains" in self.state:
+        del self.state["markov_chains"]
 
 
-@bot.on_disconnect
-def save_markov_chains(self):
-    self.state["markov_chains"] = {
-        user: {JSON_TUPLE_SEPARATOR.join(k): v for k, v in chain.items()}
-        for user, chain in self.state.get("markov_chains", {}).items()
-    }
 
 
-def _train_markov_chain(markov_chain, text):
-    words = (
-        [EMPTY_WORD] * PRECEDING_WORDS
-        + text.split()
-        + [EMPTY_WORD] * PRECEDING_WORDS
-    )
-
-    for i in range(0, len(words) - PRECEDING_WORDS - 1):
-        *preceding, word = words[i : i + PRECEDING_WORDS + 1]
-
-        prefix = markov_chain.setdefault(tuple(preceding), {})
-
-        if JSON_TUPLE_SEPARATOR in word:
-            continue
-
-        prefix[word] = prefix.get(word, 0) + 1
 
 
-def _reconstruct_text(markov_chain):
-    words = [EMPTY_WORD] * PRECEDING_WORDS
-    result = []
-
-    while True:
-        word = _pick_word(markov_chain[tuple(words)])
-
-        if word == EMPTY_WORD:
-            break
-
-        result.append(word)
-        words = words[1:]
-        words.append(word)
-
-    return " ".join(result)
 
 
-@bot.on_privmsg
-async def update_markov_chain(self, sender, _channel, message):
-    markov_chains = self.state.setdefault("markov_chains", {})
-    markov_chain = markov_chains.setdefault(sender.nick, {})
-    _train_markov_chain(markov_chain, message)
 
 
-@bot.on_command("!parrot", 1)
-async def parrot(self, sender, channel, user):
-    markov_chains = self.state.setdefault("markov_chains", {})
-    markov_chain = markov_chains.setdefault(user, {})
-
-    if markov_chain:
-        mimic = _reconstruct_text(markov_chain)
-
-        await self.send_privmsg(channel, f"{sender.nick}: {mimic}")
-    else:
-        await self.send_privmsg(
-            channel, f"{sender.nick}: I don't know how to parrot {user}."
-        )
 
 
 @bot.on_privmsg
