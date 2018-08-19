@@ -4,7 +4,6 @@
 import atexit
 import os
 import urllib.parse
-import logging
 import traceback
 import subprocess
 import sys

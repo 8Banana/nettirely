@@ -355,7 +355,7 @@ class IrcBot:
         This is the same as writing "/me some action" on a regular IRC client.
         """
 
-        self.logger.debug("Sending action %r to %r ...", text, recipient)
+        self.logger.debug("Sending action %r to %r ...", action, recipient)
         await self._send(
             "PRIVMSG", recipient, ":\x01ACTION {}\x01".format(action)
         )
@@ -424,6 +424,7 @@ class IrcBot:
                                 msg.sender,
                                 recipient,
                                 args,
+                                command,
                             )
                             await g.spawn(
                                 callback(self, msg.sender, recipient, *args)
@@ -569,7 +570,7 @@ class IrcBot:
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
             self.logger.debug(
-                "Registered function for RegExp %r", func, regexp
+                "Registered function %r for RegExp %r", func, regexp
             )
             self._regexp_callbacks.setdefault(regexp, []).append(func)
             return func

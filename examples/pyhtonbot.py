@@ -483,11 +483,11 @@ async def commit(self, sender, recipient):
     )
 
 
-@bot.on_command("!status", 0)
-async def build_status(self, sender, recipient):
-    status = await curio.run_in_thread(supervisor.build_status)
+@bot.on_command("!buildstate", 0)
+async def build_state(self, sender, recipient):
+    state = await curio.run_in_thread(supervisor.build_state)
     await bot.send_privmsg(
-        recipient, f"{sender.nick}: The build status is {status!r}"
+        recipient, f"{sender.nick}: The build status is {state!r}"
     )
 
 
