@@ -24,7 +24,7 @@ from nettirely import IrcBot, NO_SPLITTING
 
 # General bot constants
 ADMINS = {"__Myst__", "theelous3", "Akuli", "Zaab1t"}
-TRUSTED = {"marky1991", "darkf", "go|dfish", "stuzz"}
+TRUSTED = {"marky1991", "darkf", "go|dfish", "Summertime", "stuzz"}
 COMBINED_USERS = ADMINS | TRUSTED
 
 # Last seen constants
