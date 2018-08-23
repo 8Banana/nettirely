@@ -80,7 +80,7 @@ supervisor = Supervisor("8Banana/nettirely")
 
 
 @bot.on_command("!say", NO_SPLITTING)
-async def mimicry(self, _, _, args):
+async def mimicry(self, _, __, args):
     try:
         recipient, text = args.split(" ", 1)
     except ValueError:
