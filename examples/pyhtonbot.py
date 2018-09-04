@@ -79,14 +79,16 @@ bot = IrcBot(state_path="pyhtonbot_state.json")
 supervisor = Supervisor("8Banana/nettirely")
 
 
-@bot.on_command("!say", NO_SPLITTING)
-async def mimicry(self, _, __, args):
-    try:
-        recipient, text = args.split(" ", 1)
-    except ValueError:
-        return
+# TODO: Some kind of filter to stop people saying spam things
+# TODO: and getting the bot klined :D
+# @bot.on_command("!say", NO_SPLITTING)
+# async def mimicry(self, _, __, args):
+#     try:
+#         recipient, text = args.split(" ", 1)
+#     except ValueError:
+#         return
 
-    await self.send_privmsg(recipient, text)
+#     await self.send_privmsg(recipient, text)
 
 
 @bot.on_command(">>>", NO_SPLITTING)
