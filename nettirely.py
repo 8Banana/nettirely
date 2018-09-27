@@ -199,7 +199,8 @@ class IrcBot:
         Connects to an IRC server.
 
         The arguments `host` and `port` specify the server`s hostname and port.
-        The argument `host` is also passed as `server_hostname` to `curio.open_connection`.
+        The argument `host` is also passed
+        as `server_hostname` to `curio.open_connection`.
 
         The argument `nick` is used both as nickname and as username/realname.
         Nota bene: Any non-alphanumeric characters are filtered from `nick`
@@ -210,8 +211,10 @@ class IrcBot:
         set `sasl_password`, seeing as the only mechanism supported is PLAIN
         and the username only matters if you are part of a NickServ GROUP.
 
-        The argument `enable_ssl` specifies if TLS is used for connection with the server.
-        If the argument `port` is not given, it also modifies its default value.
+        The argument `enable_ssl` specifies if TLS is used
+        for connection with the server.
+        If the argument `port` is not given, it also modifies
+        its default value.
         """
 
         self.nick = nick
@@ -333,8 +336,8 @@ class IrcBot:
         """
         Send a notice `text` to `recipient`.
 
-        Nota bene: If you send a notice to a channel whose text is prefixed with
-        "[{channel}] " most clients will display it as a Channel notice.
+        Nota bene: If you send a notice to a channel whose text is prefixed
+        with "[{channel}] " most clients will display it as a Channel notice.
         """
         self.logger.debug("Sending notice %r to %r ...", text, recipient)
         await self._send("NOTICE", recipient, ":" + text)
