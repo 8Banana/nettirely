@@ -276,6 +276,53 @@ async def send_spammer_regexps(self, sender, source, _):
         await self.send_privmsg(source, f"{index + 1}. {regexp!r}")
 
 
+MUTED_PERIOD = 20  # seconds
+
+
+@bot.on_command("!start_muted", 1)
+async def start_muted_toggle(self, sender, source, arg):
+    smc = self.state.setdefault("start_muted_channels", [])
+
+    if arg == "on":
+        if source not in smc:
+            smc.append(source)
+
+        await self.send_privmsg(
+            source, f"{sender.nick}: Users will start muted."
+        )
+    elif arg == "off":
+        if source in smc:
+            smc.remove(source)
+
+        await self.send_privmsg(
+            source, f"{sender.nick}: Users will not start muted."
+        )
+    else:
+        await self.send_privmsg(source, f"{sender.nick}: Invalid argument.")
+
+
+@bot.on_join
+async def mute_for_a_bit(self, sender, channel):
+    known_users = self.state.setdefault("known_users", [])
+
+    if sender.nick in known_users:
+        return
+
+    smc = self.state.setdefault("start_muted_channels", [])
+    if channel not in smc:
+        return
+
+    # TODO: Add a special command for modes.
+    await self.send_notice(
+        sender.nick,
+        f"[{channel}] To prevent spam, you'll be unmuted in {MUTED_PERIOD} seconds.",
+    )
+    await self._send("MODE", channel, "+q", sender.nick)
+    await curio.sleep(MUTED_PERIOD)
+    await self._send("MODE", channel, "+q", sender.nick)
+    await self.send_notice(sender.nick, f"[{channel}] You have been unmuted.")
+
+
 def _pick_word(word_frequencies):
     population = []
     weights = []
