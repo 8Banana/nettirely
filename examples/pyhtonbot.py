@@ -264,11 +264,14 @@ async def send_spammer_regexps(self, sender, source, _):
         await self.send_privmsg(source, f"{index + 1}. {regexp!r}")
 
 
-MUTED_PERIOD = 20  # seconds
+DEFAULT_MUTED_PERIOD = 45  # seconds
 
 
 @bot.on_command("!start_muted", 1)
 async def start_muted_toggle(self, sender, source, arg):
+    if sender.nick not in COMBINED_USERS:
+        return
+
     smc = self.state.setdefault("start_muted_channels", [])
 
     if arg == "on":
@@ -289,6 +292,25 @@ async def start_muted_toggle(self, sender, source, arg):
         await self.send_privmsg(source, f"{sender.nick}: Invalid argument.")
 
 
+@bot.on_command("!muted_period", 1)
+async def muted_period(self, sender, source, arg):
+    if sender.nick not in COMBINED_USERS:
+        return
+
+    try:
+        arg = int(arg)
+    except ValueError:
+        await self.send_privmsg(source, f"{sender.nick}: Invalid argument.")
+        return
+
+    muted_periods = self.state.setdefault("muted_periods", {})
+    muted_periods[source] = arg
+
+    await self.send_privmsg(
+        source, f"{sender.nick}: Users will now be muted for {arg} seconds."
+    )
+
+
 @bot.on_join
 async def mute_for_a_bit(self, sender, channel):
     if sender.nick == self.nick:
@@ -302,14 +324,20 @@ async def mute_for_a_bit(self, sender, channel):
     if channel not in smc:
         return
 
+    muted_period = self.state.get("muted_periods", {}).get(
+        channel, DEFAULT_MUTED_PERIOD
+    )
+
     # TODO: Add a special command for modes.
+    await self._send("MODE", channel, "+q", sender.nick)
     await self.send_notice(
         sender.nick,
         f"[{channel}] To prevent spam, "
-        f"you have been muted for {MUTED_PERIOD} seconds.",
+        f"you have been muted for {muted_period} seconds.",
     )
-    await self._send("MODE", channel, "+q", sender.nick)
-    await curio.sleep(MUTED_PERIOD)
+
+    await curio.sleep(muted_period)
+
     await self._send("MODE", channel, "-q", sender.nick)
     await self.send_notice(sender.nick, f"[{channel}] You have been unmuted.")
     known_users.append(sender.nick)
