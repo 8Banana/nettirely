@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+import anyio
 import asks
 import bs4
-import anyio
 
 from supervisor import Supervisor
 from nettirely import IrcBot
