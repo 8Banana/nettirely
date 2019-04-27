@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="nettirely",
-    version="1.1.0",
+    version="2.0.0",
     description="IRC bots for humans.",
     keywords="irc bot ircbot humans",
     author="The 8Banana Team",
