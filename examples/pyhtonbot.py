@@ -303,16 +303,13 @@ async def mute_for_a_bit(self, sender, channel):
     if channel not in smc:
         return
 
-    period = self.state.get("muted_periods", {}).get(
-        channel, DEFAULT_MUTED_PERIOD
-    )
+    period = self.state.get("muted_periods", {}).get(channel, DEFAULT_MUTED_PERIOD)
 
     # TODO: Add a special command for modes.
     await self._send("MODE", channel, "+q", sender.nick)
     await self.send_notice(
         sender.nick,
-        f"[{channel}] To prevent spam, "
-        f"you have been muted for {period} seconds.",
+        f"[{channel}] To prevent spam, " f"you have been muted for {period} seconds.",
     )
 
     await anyio.sleep(period)
