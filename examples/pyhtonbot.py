@@ -14,10 +14,10 @@ import re
 import sys
 import time
 import urllib.parse
+import subprocess
 
 import asks
-import curio
-from curio import subprocess
+import anyio
 
 from supervisor import Supervisor
 from nettirely import IrcBot, NO_SPLITTING
@@ -52,9 +52,7 @@ handlers = []
 
 stream_handler = logging.StreamHandler(sys.stderr)
 stream_handler.setLevel(logging.INFO)
-stream_handler.setFormatter(
-    logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
-)
+stream_handler.setFormatter(logging.Formatter("[%(levelname)s] %(name)s: %(message)s"))
 handlers.append(stream_handler)
 del stream_handler
 
@@ -90,9 +88,7 @@ async def annoy_raylu(self, _, recipient, text):
 @bot.on_command("!slap", 1)
 async def slap(self, _, recipient, slappee):
     fish = random.choice(FISH)
-    await self.send_action(
-        recipient, SLAP_TEMPLATE.format(slappee=slappee, fish=fish)
-    )
+    await self.send_action(recipient, SLAP_TEMPLATE.format(slappee=slappee, fish=fish))
 
 
 @bot.on_connect
@@ -101,10 +97,7 @@ async def initialize_logs(self):
 
     if "logs" in self.state:
         logs.update(
-            {
-                k: collections.deque(v, maxlen=500)
-                for k, v in self.state["logs"].items()
-            }
+            {k: collections.deque(v, maxlen=500) for k, v in self.state["logs"].items()}
         )
 
     self.state["logs"] = logs
@@ -112,15 +105,11 @@ async def initialize_logs(self):
 
 @bot.on_disconnect
 def save_logs(self):
-    self.state["logs"] = {
-        k: list(v) for k, v in self.state.get("logs", {}).items()
-    }
+    self.state["logs"] = {k: list(v) for k, v in self.state.get("logs", {}).items()}
 
 
 async def upload_log(lines):
-    resp = await asks.post(
-        "https://theelous3.net/irc_log", data="\n".join(lines)
-    )
+    resp = await asks.post("https://theelous3.net/irc_log", data="\n".join(lines))
     return resp.text
 
 
@@ -178,8 +167,7 @@ async def send_log(self, sender, recipient):
 
     if logs[recipient]:
         await self.send_privmsg(
-            recipient,
-            f"{sender.nick}: Uploading logs, this might take a second...",
+            recipient, f"{sender.nick}: Uploading logs, this might take a second..."
         )
         result = await upload_log(logs[recipient])
         await self.send_privmsg(recipient, f"{sender.nick}: {result}")
@@ -202,8 +190,7 @@ FREENODE_SPAM_PREFIXES = [
 async def initialize_spammer_database(self):
     if "spammer_prefixes" in self.state:
         self.state["spammer_regexps"] = [
-            "^" + re.escape(prefix)
-            for prefix in self.state.pop("spammer_prefixes")
+            "^" + re.escape(prefix) for prefix in self.state.pop("spammer_prefixes")
         ]
     else:
         self.state.setdefault(
@@ -227,12 +214,8 @@ async def add_spammer(self, sender, source, spammer_nickname):
         )
         return
 
-    await self.send_privmsg(
-        source, f"Added {first_spammer_message!r} as a prefix."
-    )
-    self.state["spammer_regexps"].append(
-        "^" + re.escape(first_spammer_message)
-    )
+    await self.send_privmsg(source, f"Added {first_spammer_message!r} as a prefix.")
+    self.state["spammer_regexps"].append("^" + re.escape(first_spammer_message))
 
 
 @bot.on_command("!addspamregexp", NO_SPLITTING)
@@ -278,16 +261,12 @@ async def start_muted_toggle(self, sender, source, arg):
         if source not in smc:
             smc.append(source)
 
-        await self.send_privmsg(
-            source, f"{sender.nick}: Users will start muted."
-        )
+        await self.send_privmsg(source, f"{sender.nick}: Users will start muted.")
     elif arg == "off":
         if source in smc:
             smc.remove(source)
 
-        await self.send_privmsg(
-            source, f"{sender.nick}: Users will not start muted."
-        )
+        await self.send_privmsg(source, f"{sender.nick}: Users will not start muted.")
     else:
         await self.send_privmsg(source, f"{sender.nick}: Invalid argument.")
 
@@ -336,7 +315,7 @@ async def mute_for_a_bit(self, sender, channel):
         f"you have been muted for {muted_period} seconds.",
     )
 
-    await curio.sleep(muted_period)
+    await anyio.sleep(muted_period)
 
     await self._send("MODE", channel, "-q", sender.nick)
     await self.send_notice(sender.nick, f"[{channel}] You have been unmuted.")
@@ -390,13 +369,9 @@ async def show_seen(self, sender, channel, user):
         else:
             when = f"{when} {amount} ago"
 
-        await self.send_privmsg(
-            channel, f"{sender.nick}: {user} was last seen {when}."
-        )
+        await self.send_privmsg(channel, f"{sender.nick}: {user} was last seen {when}.")
     else:
-        await self.send_privmsg(
-            channel, f"{sender.nick}: I've never seen {user}."
-        )
+        await self.send_privmsg(channel, f"{sender.nick}: I've never seen {user}.")
 
 
 def _make_url(domain, what2google):
@@ -413,9 +388,7 @@ async def _respond(self, recipient, domain, text):
         target, what2google = text.split(maxsplit=1)
     except ValueError:
         command = "fgoogle" if domain == "lmfgtfy.com" else "google"
-        await self.send_privmsg(
-            recipient, "Usage: !%s nick what2google" % command
-        )
+        await self.send_privmsg(recipient, "Usage: !%s nick what2google" % command)
         return
 
     url = _make_url(domain, what2google)
@@ -451,9 +424,7 @@ async def autolog(self, sender, recipient, argument):
             f"{sender.nick}: You will not recieve logs automatically anymore.",
         )
     else:
-        await self.send_privmsg(
-            recipient, f"{sender.nick}: USAGE: !autolog on/off"
-        )
+        await self.send_privmsg(recipient, f"{sender.nick}: USAGE: !autolog on/off")
 
 
 @bot.on_join
@@ -471,33 +442,29 @@ async def autolog_send(self, sender, channel):
 
 @bot.on_command("!update", NO_SPLITTING)
 async def update(_self, sender, _recipient, _args):
-    def worker():
-        supervisor.update()
-
     if sender.nick in ADMINS:
-        await curio.run_in_thread(worker)
+        await anyio.run_in_thread(supervisor.update)
 
 
 @bot.on_command("!commit", 0)
 async def commit(self, sender, recipient):
     info = (
-        await subprocess.check_output(["git", "log", "-1", "--pretty=%ai\t%B"])
+        await anyio.run_in_thread(
+            subprocess.check_output, ["git", "log", "-1", "--pretty=%ai\t%B"]
+        )
     ).decode("utf-8")
     update_time, commit_message = info.split("\t", 1)
     commit_summary = commit_message.splitlines()[0]
 
     await bot.send_privmsg(
-        recipient,
-        f"{sender.nick}: Updated at {update_time}: {commit_summary!r}",
+        recipient, f"{sender.nick}: Updated at {update_time}: {commit_summary!r}"
     )
 
 
 @bot.on_command("!buildstate", 0)
 async def build_state(self, sender, recipient):
-    state = await curio.run_in_thread(supervisor.build_state)
-    await bot.send_privmsg(
-        recipient, f"{sender.nick}: The build state is {state!r}"
-    )
+    state = await anyio.run_in_thread(supervisor.build_state)
+    await bot.send_privmsg(recipient, f"{sender.nick}: The build state is {state!r}")
 
 
 @bot.on_command("!reload", NO_SPLITTING)
@@ -506,7 +473,7 @@ async def bot_reload(_self, sender, _recipient, _args):
         supervisor.restart()
 
     if sender.nick in ADMINS:
-        await curio.run_in_thread(worker)
+        await anyio.run_in_thread(worker)
 
 
 def _add_canned_response(self, limiter, regexp, response):
@@ -529,9 +496,7 @@ async def canned_response(self, sender, recipient, args):
     try:
         limiter, regexp, response = args.split(" ", 2)
     except ValueError:
-        await self.send_privmsg(
-            recipient, f"{sender.nick}: !can LIMITER REGEXP RESP"
-        )
+        await self.send_privmsg(recipient, f"{sender.nick}: !can LIMITER REGEXP RESP")
         return
 
     try:
@@ -589,23 +554,18 @@ async def cans(self, sender, recipient, *_):
     await self.send_privmsg(recipient, f"{sender.nick}: Check your PMs!")
     for regexp, response in canned_responses.items():
         await self.send_privmsg(sender.nick, f"{regexp!r} -> {response!r}")
-        await curio.sleep(1 / 10)  # 10 cans per second.
+        await anyio.sleep(1 / 10)  # 10 cans per second.
 
 
 async def main():
 
     with supervisor:
-        asks.init("curio")
-
         password = os.environ.get("IRC_PASSWORD")
 
         if len(sys.argv) > 1 and sys.argv[1] == "debug":
             nickname = os.environ["IRC_NICKNAME"]
             await bot.connect(
-                nickname,
-                "chat.freenode.net",
-                sasl_password=password,
-                enable_ssl=True,
+                nickname, "chat.freenode.net", sasl_password=password, enable_ssl=True
             )
 
             await bot.join_channel("#8banana-bottest")
@@ -626,4 +586,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    curio.run(main)
+    anyio.run(main)

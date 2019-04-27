@@ -18,9 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_output(args):
-    process = subprocess.run(
-        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if process.returncode == 0:
         return process.stdout.decode("ascii").strip()
@@ -45,10 +43,7 @@ def _get_output(args):
 
 class Supervisor:
     def __init__(
-        self,
-        travis_repo_slug,
-        git_remote="origin",
-        update_check_interval=TEN_MINUTES,
+        self, travis_repo_slug, git_remote="origin", update_check_interval=TEN_MINUTES
     ):
         self.update_check_interval = update_check_interval
 

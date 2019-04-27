@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asks
 import bs4
-import curio
+import anyio
 
 from supervisor import Supervisor
 from nettirely import IrcBot
@@ -14,11 +14,11 @@ async def create_termbin(contents):
     if isinstance(contents, str):
         contents = contents.encode("utf-8")
 
-    socket = await curio.open_connection("termbin.com", 9999)
+    socket = await anyio.connect_tcp("termbin.com", 9999)
 
     async with socket:
-        await socket.sendall(contents)
-        url = await socket.recv(4096)
+        await socket.send_all(contents)
+        url = await socket.receive_some(4096)
         return url.decode("utf-8").strip()
 
 
@@ -33,28 +33,22 @@ async def factoid_handler(self, sender, recipient, match):
 
     if factoid == "defact" and len(args) >= 1:
         factoids[args[0]] = " ".join(args[1:])
-        await self.send_privmsg(
-            recipient, f"{nick}: Defined factoid {args[0]!r}"
-        )
-        await curio.run_in_thread(self.save_state)
+        await self.send_privmsg(recipient, f"{nick}: Defined factoid {args[0]!r}")
+        await anyio.run_in_thread(self.save_state)
     elif factoid == "delfact" and len(args) >= 1:
         factoids = bot.state.setdefault("factoids", {})
         if factoids.pop(args[0], None) is not None:
-            await self.send_privmsg(
-                recipient, f"{nick}: Removed factoid {args[0]!r}"
-            )
-            await curio.run_in_thread(self.save_state)
+            await self.send_privmsg(recipient, f"{nick}: Removed factoid {args[0]!r}")
+            await anyio.run_in_thread(self.save_state)
         else:
-            await self.send_privmsg(
-                recipient, f"{nick}: No such factoid exists"
-            )
+            await self.send_privmsg(recipient, f"{nick}: No such factoid exists")
     elif factoid == "defadmin" and nick in admins and len(args) >= 1:
         for user in args:
             if user not in admins:
                 admins.append(user)
         users = ", ".join(args)
         await self.send_privmsg(recipient, f"{nick}: Added admins {users}")
-        await curio.run_in_thread(self.save_state)
+        await anyio.run_in_thread(self.save_state)
     elif factoid == "deladmin" and nick in admins and len(args) >= 1:
         for user in args:
             try:
@@ -63,11 +57,11 @@ async def factoid_handler(self, sender, recipient, match):
                 pass
         users = ", ".join(args)
         await self.send_privmsg(recipient, f"{nick}: Removed admins {users}")
-        await curio.run_in_thread(self.save_state)
+        await anyio.run_in_thread(self.save_state)
     elif factoid == "setapikey" and nick in admins and len(args) >= 1:
         bot.state["lastfm_api_key"] = args[0]
         await self.send_privmsg(recipient, f"{nick}: lastfm api key updated")
-        await curio.run_in_thread(self.save_state)
+        await anyio.run_in_thread(self.save_state)
     elif factoid == "factoids":
         url = await create_termbin(" ".join(factoids))
         await self.send_privmsg(recipient, url)
@@ -76,9 +70,7 @@ async def factoid_handler(self, sender, recipient, match):
         await self.send_privmsg(recipient, url)
     elif factoid == "at" and len(args) >= 2:
         if args[1] in factoids:
-            await self.send_privmsg(
-                recipient, f"{args[0]}: {factoids[args[1]]}"
-            )
+            await self.send_privmsg(recipient, f"{args[0]}: {factoids[args[1]]}")
     elif factoid == "join" and len(args) >= 1 and sender.nick in admins:
         await self.join_channel(args[0])
     elif factoid == "quit" and sender.nick in admins:
@@ -106,9 +98,7 @@ async def factoid_handler(self, sender, recipient, match):
             # This happens when there are no tracks returned for some reason.
             return
 
-        msg = (
-            f"{sender.nick}: {lastfm_user} is listening to {artist} - {title}"
-        )
+        msg = f"{sender.nick}: {lastfm_user} is listening to {artist} - {title}"
         if album:
             msg += f" (from {album})"
         await self.send_privmsg(recipient, msg)
@@ -122,8 +112,6 @@ async def factoid_handler(self, sender, recipient, match):
 
 async def main():
     with supervisor:
-        asks.init("curio")
-
         await bot.connect("factoid_bot8", "chat.freenode.net")
         await bot.join_channel("#8banana-bottest")
 
@@ -131,4 +119,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    curio.run(main)
+    anyio.run(main)

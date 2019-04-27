@@ -7,7 +7,7 @@ import os
 import re
 from base64 import b64encode
 
-import curio
+import anyio
 
 
 User = collections.namedtuple("User", ["nick", "user", "host"])
@@ -63,9 +63,7 @@ class IrcBot:
         if state_path is not None:
             self.state_path = state_path
         else:
-            self.state_path = os.path.join(
-                os.path.dirname(__file__), "state.json"
-            )
+            self.state_path = os.path.join(os.path.dirname(__file__), "state.json")
 
         self.nick = None
         self.encoding = encoding
@@ -73,7 +71,6 @@ class IrcBot:
         self.channel_users = {}
 
         self._running = True
-        self._linebuffer = collections.deque()
         self._sock = None
 
         try:
@@ -90,14 +87,10 @@ class IrcBot:
         self._regexp_callbacks = {}
 
     def _on_exit(self):
-        # We're in a weird place here, so I made the design decision to only
-        # allow non-coroutines.
-        # It would've been possible to also allow coroutines, however that
-        # would involve creating a new curio Kernel.
+        # Since the event loop is in a better place at this point, we can only
+        # do synchronous stuff on disconnection.
         for callback in self._disconnection_callbacks:
-            self.logger.debug(
-                "Calling disconnection callback %s ...", callback
-            )
+            self.logger.debug("Calling disconnection callback %s ...", callback)
             callback(self)
 
         self.save_state()
@@ -119,7 +112,7 @@ class IrcBot:
 
     async def _send(self, *parts):
         data = " ".join(parts).encode(self.encoding) + b"\r\n"
-        await self._sock.sendall(data)
+        await self._sock.send_all(data)
 
     async def _send_in_chunks(self, cmd, data, chunk_length):
         while data:
@@ -133,22 +126,10 @@ class IrcBot:
                 chunk, data = data[:chunk_length], data[chunk_length:]
                 await self._send(cmd, chunk)
 
-    async def _recv_line(
-        self, *, autoreply_to_ping=True, skip_empty_lines=True
-    ):
-        if not self._linebuffer:
-            data = bytearray()
-            while not data.endswith(b"\r\n"):
-                chunk = await self._sock.recv(4096)
-                if chunk:
-                    data += chunk
-                else:
-                    raise IOError("Server closed the connection!")
-
-            lines = data.decode(self.encoding, errors="replace").split("\r\n")
-            self._linebuffer.extend(lines)
-
-        line = self._linebuffer.popleft()
+    async def _recv_line(self, *, autoreply_to_ping=True, skip_empty_lines=True):
+        line = await self._sock.receive_until(b"\r\n", 4096)
+        assert line.count(b"\r\n") == 0
+        line = line.decode(self.encoding, errors="replace")
 
         if autoreply_to_ping and line.startswith("PING"):
             await self._send(line.replace("PING", "PONG", 1))
@@ -200,7 +181,7 @@ class IrcBot:
 
         The arguments `host` and `port` specify the server`s hostname and port.
         The argument `host` is also passed
-        as `server_hostname` to `curio.open_connection`.
+        as `server_hostname` to `anyio.connect_tcp`.
 
         The argument `nick` is used both as nickname and as username/realname.
         Nota bene: Any non-alphanumeric characters are filtered from `nick`
@@ -223,9 +204,7 @@ class IrcBot:
             port = 6697 if enable_ssl else 6667
 
         self.logger.info("Opening connection to %s:%s ...", host, port)
-        self._sock = await curio.open_connection(
-            host, port, ssl=enable_ssl, server_hostname=host
-        )
+        self._sock = await anyio.connect_tcp(host, port, autostart_tls=enable_ssl)
         self.logger.info("Opened connection to %s:%s", host, port)
 
         # We need to track if we started capability negotiation to finish it.
@@ -269,9 +248,7 @@ class IrcBot:
                     if sasl_username is None:
                         query = f"\0{self.nick}\0{sasl_password}"
                     else:
-                        query = (
-                            f"{sasl_username}\0{self.nick}\0{sasl_password}"
-                        )
+                        query = f"{sasl_username}\0{self.nick}\0{sasl_password}"
                 else:
                     raise ValueError(
                         f"SASL mechanism {sasl_mechanism!r} is not supported."
@@ -279,9 +256,7 @@ class IrcBot:
 
                 b64_query = b64encode(query.encode("utf-8")).decode("utf-8")
 
-                await self._send_in_chunks(
-                    "AUTHENTICATE", b64_query, chunk_length=400
-                )
+                await self._send_in_chunks("AUTHENTICATE", b64_query, chunk_length=400)
             elif msg.command == "900":  # RPL_LOGGEDIN
                 self.logger.info("Logged in with SASL.")
                 if capability_negotation_started:
@@ -291,9 +266,7 @@ class IrcBot:
                 raise ValueError("Failed to authenticate with SASL.")
             elif msg.command == "433":  # ERR_NICKNAMEINUSE
                 self.logger.error("Nickname %r is already in use.", self.nick)
-                raise ValueError(
-                    f"The nickname {self.nick!r} is already in use."
-                )
+                raise ValueError(f"The nickname {self.nick!r} is already in use.")
             elif msg.command == "432":  # ERR_ERRONEUSNICKNAME
                 self.logger.critical("Nickname %r is erroneous.", self.nick)
                 raise ValueError(f"The nickname {self.nick!r} is erroneous.")
@@ -301,15 +274,13 @@ class IrcBot:
                 self.logger.info("Recieved welcome.")
                 break
 
-        async with curio.TaskGroup() as g:
+        async with anyio.create_task_group() as g:
             for callback in self._connection_callbacks:
-                self.logger.debug(
-                    "Spawning connection callback %r ...", callback
-                )
-                await g.spawn(callback(self))
+                self.logger.debug("Spawning connection callback %r ...", callback)
+                await g.spawn(callback, self)
             self.logger.debug("Waiting on connection callbacks ... ")
-            await g.join()
-            self.logger.debug("Everything went fine.")
+
+        self.logger.debug("Everything went fine.")
 
         # We should only register disconnection callbacks if connection
         # actually happens.
@@ -327,9 +298,7 @@ class IrcBot:
         """
         Kick `nickname` from `channel` for `reason`.
         """
-        self.logger.info(
-            "Kicking %r from %r because %r ...", nickname, channel, reason
-        )
+        self.logger.info("Kicking %r from %r because %r ...", nickname, channel, reason)
         await self._send("KICK", channel, nickname, ":" + reason)
 
     async def send_notice(self, recipient, text):
@@ -357,9 +326,7 @@ class IrcBot:
         """
 
         self.logger.debug("Sending action %r to %r ...", action, recipient)
-        await self._send(
-            "PRIVMSG", recipient, ":\x01ACTION {}\x01".format(action)
-        )
+        await self._send("PRIVMSG", recipient, ":\x01ACTION {}\x01".format(action))
 
     async def mainloop(self):
         """
@@ -389,7 +356,7 @@ class IrcBot:
                 self.channel_users.setdefault(channel, set()).discard(nick)
                 self.logger.info("%r left %r", nick, channel)
 
-            async with curio.TaskGroup() as g:
+            async with anyio.create_task_group() as g:
                 if msg.command == "PRIVMSG":
                     recipient = msg.args[0]
                     if recipient == self.nick:
@@ -410,14 +377,9 @@ class IrcBot:
                                 command,
                             )
                             await g.spawn(
-                                callback(
-                                    self, msg.sender, recipient, " ".join(args)
-                                )
+                                callback, self, msg.sender, recipient, " ".join(args)
                             )
-                        elif (
-                            arg_amount == ANY_ARGUMENTS
-                            or len(args) == arg_amount
-                        ):
+                        elif arg_amount == ANY_ARGUMENTS or len(args) == arg_amount:
                             self.logger.debug(
                                 "Spawning command callback "
                                 "%s(self, %r, %r, *%r) for command %r",
@@ -427,15 +389,10 @@ class IrcBot:
                                 args,
                                 command,
                             )
-                            await g.spawn(
-                                callback(self, msg.sender, recipient, *args)
-                            )
+                            await g.spawn(callback, self, msg.sender, recipient, *args)
 
                     # RegExp callbacks.
-                    for (
-                        regexp,
-                        regexp_callbacks,
-                    ) in self._regexp_callbacks.items():
+                    for (regexp, regexp_callbacks) in self._regexp_callbacks.items():
                         for match in regexp.finditer(msg.args[1]):
 
                             for callback in regexp_callbacks:
@@ -450,15 +407,11 @@ class IrcBot:
                                 )
 
                                 await g.spawn(
-                                    callback(
-                                        self, msg.sender, recipient, match
-                                    )
+                                    callback, self, msg.sender, recipient, match
                                 )
 
                 # Message callbacks. (e.g. JOIN, PART, PRIVMSG, ...)
-                message_callbacks = self._message_callbacks.get(
-                    msg.command, ()
-                )
+                message_callbacks = self._message_callbacks.get(msg.command, ())
 
                 for callback in message_callbacks:
                     self.logger.debug(
@@ -471,7 +424,7 @@ class IrcBot:
                         msg.command,
                     )
 
-                    await g.spawn(callback(self, msg.sender, *msg.args))
+                    await g.spawn(callback, self, msg.sender, *msg.args)
 
     async def quit(self, reason="Goodbye!"):
         self.logger.info("Quitting because %r", reason)
@@ -534,9 +487,7 @@ class IrcBot:
                 arg_amount,
                 command,
             )
-            self._command_callbacks.setdefault(command, []).append(
-                (func, arg_amount)
-            )
+            self._command_callbacks.setdefault(command, []).append((func, arg_amount))
             return func
 
         return _inner
@@ -570,9 +521,7 @@ class IrcBot:
         def _inner(func):
             if not inspect.iscoroutinefunction(func):
                 raise ValueError("You can only register coroutines!")
-            self.logger.debug(
-                "Registered function %r for RegExp %r", func, regexp
-            )
+            self.logger.debug("Registered function %r for RegExp %r", func, regexp)
             self._regexp_callbacks.setdefault(regexp, []).append(func)
             return func
 

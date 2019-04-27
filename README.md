@@ -10,7 +10,7 @@ in a matter of minutes.
 Here's the power of nettirely:
 
 ```python
-import curio
+import anyio
 
 from nettirely import IrcBot, NO_SPLITTING
 
@@ -28,14 +28,14 @@ async def main():
 
 
 if __name__ == "__main__":
-    curio.run(main)
+    anyio.run(main)
 ```
 
 In just 20 lines of readable code, you've made an IRC bot which supports a
 command.
 
 You can also very easily combine `nettirely` with any library that supports
-curio.  
+anyio.  
 For example, you can interact with an HTTP REST API using the [asks library](https://github.com/theelous3/asks)!
 
 # Usage
@@ -61,7 +61,7 @@ PANGs. It allows you to just focus on the important parts of your bot.
 1. Ability to do multiple actions on a PRIVMSG, JOIN, PART, or QUIT.
 2. Ability to easily write commands with any amount of arguments, even
    infinite!
-3. Compatibility with any existing curio library.
+3. Compatibility with any existing anyio library.
 4. And more!
 
 # Features It Will Have
