@@ -16,9 +16,9 @@ import time
 import urllib.parse
 import subprocess
 
-import curio
 import asks
 import anyio
+import curio
 
 from supervisor import Supervisor
 from nettirely import IrcBot, NO_SPLITTING
