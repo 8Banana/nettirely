@@ -1,0 +1,208 @@
+[DEBUG @ 2019-05-18 18:17:24,950] nettirely: Registered function <function annoy_raylu at 0xb69bd854> (args: -2) for command '!py'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function annoy_raylu at 0xb69bd854> (args: -2) for command '>>>'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function slap at 0xb69bd80c> (args: 1) for command '!slap'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function send_log at 0xb69bdadc> (args: 0) for command '!log'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function add_spammer at 0xb69bdb6c> (args: 1) for command '!addspammer'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function add_spam_regexp at 0xb69bdbb4> (args: -2) for command '!addspamregexp'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function remove_spam_regexp at 0xb69bdbfc> (args: -2) for command '!removespamregexp'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function send_spammer_regexps at 0xb69bdc8c> (args: -2) for command '!spammer_regexps'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function start_muted_toggle at 0xb69bdcd4> (args: 1) for command '!start_muted'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function muted_period at 0xb69bdd1c> (args: 1) for command '!muted_period'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function show_seen at 0xb69bde84> (args: 1) for command '!seen'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function google at 0xb69bdf5c> (args: -2) for command '!google'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function fgoogle at 0xb69bdfa4> (args: -2) for command '!fgoogle'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function autolog at 0xb690902c> (args: 1) for command '!autolog'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function update at 0xb69090bc> (args: -2) for command '!update'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function commit at 0xb6909104> (args: 0) for command '!commit'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function build_state at 0xb690914c> (args: 0) for command '!buildstate'
+[DEBUG @ 2019-05-18 18:17:24,951] nettirely: Registered function <function bot_reload at 0xb6909194> (args: -2) for command '!reload'
+[DEBUG @ 2019-05-18 18:17:24,952] nettirely: Registered function <function canned_response at 0xb690926c> (args: -2) for command '!can'
+[DEBUG @ 2019-05-18 18:17:24,952] nettirely: Registered function <function uncan_response at 0xb69092b4> (args: 1) for command '!uncan'
+[DEBUG @ 2019-05-18 18:17:24,952] nettirely: Registered function <function cans at 0xb69092fc> (args: -1) for command '!cans'
+[DEBUG @ 2019-05-18 18:17:24,976] asyncio: Using selector: EpollSelector
+[INFO @ 2019-05-18 18:17:24,976] nettirely: Opening connection to chat.freenode.net:6697 ...
+[INFO @ 2019-05-18 18:17:25,506] nettirely: Opened connection to chat.freenode.net:6697
+[INFO @ 2019-05-18 18:17:25,507] nettirely: Sending authentication ... 
+[ERROR @ 2019-05-18 18:17:31,401] nettirely: Nickname 'pyhtonbot' is already in use.
+[ERROR @ 2019-05-18 18:17:31,401] supervisor: Exception was raised in supervised code.
+Traceback (most recent call last):
+  File "examples/pyhtonbot.py", line 574, in main
+    enable_ssl=True,
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 269, in connect
+    raise ValueError(f"The nickname {self.nick!r} is already in use.")
+ValueError: The nickname 'pyhtonbot' is already in use.
+[INFO @ 2019-05-18 18:17:31,405] supervisor: Restarting ... 
+[DEBUG @ 2019-05-18 18:17:31,673] nettirely: Registered function <function annoy_raylu at 0xb6991854> (args: -2) for command '!py'
+[DEBUG @ 2019-05-18 18:17:31,673] nettirely: Registered function <function annoy_raylu at 0xb6991854> (args: -2) for command '>>>'
+[DEBUG @ 2019-05-18 18:17:31,673] nettirely: Registered function <function slap at 0xb699180c> (args: 1) for command '!slap'
+[DEBUG @ 2019-05-18 18:17:31,673] nettirely: Registered function <function send_log at 0xb6991adc> (args: 0) for command '!log'
+[DEBUG @ 2019-05-18 18:17:31,673] nettirely: Registered function <function add_spammer at 0xb6991b6c> (args: 1) for command '!addspammer'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function add_spam_regexp at 0xb6991bb4> (args: -2) for command '!addspamregexp'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function remove_spam_regexp at 0xb6991bfc> (args: -2) for command '!removespamregexp'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function send_spammer_regexps at 0xb6991c8c> (args: -2) for command '!spammer_regexps'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function start_muted_toggle at 0xb6991cd4> (args: 1) for command '!start_muted'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function muted_period at 0xb6991d1c> (args: 1) for command '!muted_period'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function show_seen at 0xb6991e84> (args: 1) for command '!seen'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function google at 0xb6991f5c> (args: -2) for command '!google'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function fgoogle at 0xb6991fa4> (args: -2) for command '!fgoogle'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function autolog at 0xb611802c> (args: 1) for command '!autolog'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function update at 0xb61180bc> (args: -2) for command '!update'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function commit at 0xb6118104> (args: 0) for command '!commit'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function build_state at 0xb611814c> (args: 0) for command '!buildstate'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function bot_reload at 0xb6118194> (args: -2) for command '!reload'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function canned_response at 0xb611826c> (args: -2) for command '!can'
+[DEBUG @ 2019-05-18 18:17:31,674] nettirely: Registered function <function uncan_response at 0xb61182b4> (args: 1) for command '!uncan'
+[DEBUG @ 2019-05-18 18:17:31,675] nettirely: Registered function <function cans at 0xb61182fc> (args: -1) for command '!cans'
+[DEBUG @ 2019-05-18 18:17:31,685] asyncio: Using selector: EpollSelector
+[INFO @ 2019-05-18 18:17:31,686] nettirely: Opening connection to chat.freenode.net:6697 ...
+[INFO @ 2019-05-18 18:17:32,380] nettirely: Opened connection to chat.freenode.net:6697
+[INFO @ 2019-05-18 18:17:32,381] nettirely: Sending authentication ... 
+[ERROR @ 2019-05-18 18:17:36,402] supervisor: Exception was raised in supervised code.
+Traceback (most recent call last):
+  File "/usr/lib/python3.7/asyncio/runners.py", line 43, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 571, in run_until_complete
+    self.run_forever()
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 539, in run_forever
+    self._run_once()
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 1739, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/lib/python3.7/selectors.py", line 468, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "examples/pyhtonbot.py", line 574, in main
+    enable_ssl=True,
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 229, in connect
+    msg = self._split_line(await self._recv_line())
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 130, in _recv_line
+    line = await self._sock.receive_until(b"\r\n", 4096)
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_networking.py", line 267, in receive_until
+    data = await self._socket.recv(read_size)
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_networking.py", line 94, in recv
+    await self._wait_readable()
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_backends/_asyncio.py", line 595, in wait_socket_readable
+    await event.wait()
+  File "/usr/lib/python3.7/asyncio/locks.py", line 293, in wait
+    await fut
+concurrent.futures._base.CancelledError
+[INFO @ 2019-05-18 18:17:36,424] supervisor: Restarting ... 
+[DEBUG @ 2019-05-18 18:17:36,682] nettirely: Registered function <function annoy_raylu at 0xb6937854> (args: -2) for command '!py'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function annoy_raylu at 0xb6937854> (args: -2) for command '>>>'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function slap at 0xb693780c> (args: 1) for command '!slap'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function send_log at 0xb6937adc> (args: 0) for command '!log'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function add_spammer at 0xb6937b6c> (args: 1) for command '!addspammer'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function add_spam_regexp at 0xb6937bb4> (args: -2) for command '!addspamregexp'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function remove_spam_regexp at 0xb6937bfc> (args: -2) for command '!removespamregexp'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function send_spammer_regexps at 0xb6937c8c> (args: -2) for command '!spammer_regexps'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function start_muted_toggle at 0xb6937cd4> (args: 1) for command '!start_muted'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function muted_period at 0xb6937d1c> (args: 1) for command '!muted_period'
+[DEBUG @ 2019-05-18 18:17:36,683] nettirely: Registered function <function show_seen at 0xb6937e84> (args: 1) for command '!seen'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function google at 0xb6937f5c> (args: -2) for command '!google'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function fgoogle at 0xb6937fa4> (args: -2) for command '!fgoogle'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function autolog at 0xb60be02c> (args: 1) for command '!autolog'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function update at 0xb60be0bc> (args: -2) for command '!update'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function commit at 0xb60be104> (args: 0) for command '!commit'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function build_state at 0xb60be14c> (args: 0) for command '!buildstate'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function bot_reload at 0xb60be194> (args: -2) for command '!reload'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function canned_response at 0xb60be26c> (args: -2) for command '!can'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function uncan_response at 0xb60be2b4> (args: 1) for command '!uncan'
+[DEBUG @ 2019-05-18 18:17:36,684] nettirely: Registered function <function cans at 0xb60be2fc> (args: -1) for command '!cans'
+[DEBUG @ 2019-05-18 18:17:36,696] asyncio: Using selector: EpollSelector
+[INFO @ 2019-05-18 18:17:36,696] nettirely: Opening connection to chat.freenode.net:6697 ...
+[INFO @ 2019-05-18 18:17:37,376] nettirely: Opened connection to chat.freenode.net:6697
+[INFO @ 2019-05-18 18:17:37,377] nettirely: Sending authentication ... 
+[ERROR @ 2019-05-18 18:17:38,306] supervisor: Exception was raised in supervised code.
+Traceback (most recent call last):
+  File "/usr/lib/python3.7/asyncio/runners.py", line 43, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 571, in run_until_complete
+    self.run_forever()
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 539, in run_forever
+    self._run_once()
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 1739, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/lib/python3.7/selectors.py", line 468, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "examples/pyhtonbot.py", line 574, in main
+    enable_ssl=True,
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 229, in connect
+    msg = self._split_line(await self._recv_line())
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 130, in _recv_line
+    line = await self._sock.receive_until(b"\r\n", 4096)
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_networking.py", line 267, in receive_until
+    data = await self._socket.recv(read_size)
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_networking.py", line 94, in recv
+    await self._wait_readable()
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_backends/_asyncio.py", line 595, in wait_socket_readable
+    await event.wait()
+  File "/usr/lib/python3.7/asyncio/locks.py", line 293, in wait
+    await fut
+concurrent.futures._base.CancelledError
+[INFO @ 2019-05-18 18:17:38,317] supervisor: Restarting ... 
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function annoy_raylu at 0xb695580c> (args: -2) for command '!py'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function annoy_raylu at 0xb695580c> (args: -2) for command '>>>'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function slap at 0xb69557c4> (args: 1) for command '!slap'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function send_log at 0xb6955a94> (args: 0) for command '!log'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function add_spammer at 0xb6955b24> (args: 1) for command '!addspammer'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function add_spam_regexp at 0xb6955b6c> (args: -2) for command '!addspamregexp'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function remove_spam_regexp at 0xb6955bb4> (args: -2) for command '!removespamregexp'
+[DEBUG @ 2019-05-18 18:17:38,575] nettirely: Registered function <function send_spammer_regexps at 0xb6955c44> (args: -2) for command '!spammer_regexps'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function start_muted_toggle at 0xb6955c8c> (args: 1) for command '!start_muted'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function muted_period at 0xb6955cd4> (args: 1) for command '!muted_period'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function show_seen at 0xb6955e3c> (args: 1) for command '!seen'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function google at 0xb6955f14> (args: -2) for command '!google'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function fgoogle at 0xb6955f5c> (args: -2) for command '!fgoogle'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function autolog at 0xb6955fa4> (args: 1) for command '!autolog'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function update at 0xb5fc0074> (args: -2) for command '!update'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function commit at 0xb5fc00bc> (args: 0) for command '!commit'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function build_state at 0xb5fc0104> (args: 0) for command '!buildstate'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function bot_reload at 0xb5fc014c> (args: -2) for command '!reload'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function canned_response at 0xb5fc0224> (args: -2) for command '!can'
+[DEBUG @ 2019-05-18 18:17:38,576] nettirely: Registered function <function uncan_response at 0xb5fc026c> (args: 1) for command '!uncan'
+[DEBUG @ 2019-05-18 18:17:38,577] nettirely: Registered function <function cans at 0xb5fc02b4> (args: -1) for command '!cans'
+[DEBUG @ 2019-05-18 18:17:38,589] asyncio: Using selector: EpollSelector
+[INFO @ 2019-05-18 18:17:38,589] nettirely: Opening connection to chat.freenode.net:6697 ...
+[INFO @ 2019-05-18 18:17:39,090] nettirely: Opened connection to chat.freenode.net:6697
+[INFO @ 2019-05-18 18:17:39,090] nettirely: Sending authentication ... 
+[ERROR @ 2019-05-18 18:17:42,098] supervisor: Exception was raised in supervised code.
+Traceback (most recent call last):
+  File "/usr/lib/python3.7/asyncio/runners.py", line 43, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 571, in run_until_complete
+    self.run_forever()
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 539, in run_forever
+    self._run_once()
+  File "/usr/lib/python3.7/asyncio/base_events.py", line 1739, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/lib/python3.7/selectors.py", line 468, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "examples/pyhtonbot.py", line 574, in main
+    enable_ssl=True,
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 229, in connect
+    msg = self._split_line(await self._recv_line())
+  File "/home/theelous3/zoo/python/8ba/pythonbot/nettirely/nettirely.py", line 130, in _recv_line
+    line = await self._sock.receive_until(b"\r\n", 4096)
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_networking.py", line 267, in receive_until
+    data = await self._socket.recv(read_size)
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_networking.py", line 94, in recv
+    await self._wait_readable()
+  File "/home/theelous3/zoo/python/8ba/pythonbot/env/lib/python3.7/site-packages/anyio/_backends/_asyncio.py", line 595, in wait_socket_readable
+    await event.wait()
+  File "/usr/lib/python3.7/asyncio/locks.py", line 293, in wait
+    await fut
+concurrent.futures._base.CancelledError
+[INFO @ 2019-05-18 18:17:42,109] supervisor: Restarting ... 

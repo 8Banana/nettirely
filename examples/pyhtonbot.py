@@ -16,6 +16,7 @@ import time
 import urllib.parse
 import subprocess
 
+import curio
 import asks
 import anyio
 
@@ -583,4 +584,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    anyio.run(main)
+    curio.run(main)
