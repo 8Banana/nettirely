@@ -85,6 +85,7 @@ supervisor = Supervisor("8Banana/nettirely")
 #    <darkf> wtf is $>
 #    <Summertime> its fuck pyhtonbot
 
+
 @bot.on_command("!py", NO_SPLITTING)
 async def annoy_raylu(self, _, recipient, text):
     if recipient == self.nick:
