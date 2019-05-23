@@ -78,7 +78,14 @@ bot = IrcBot(state_path="pyhtonbot_state.json")
 supervisor = Supervisor("8Banana/nettirely")
 
 
-@bot.on_command(">>>", NO_SPLITTING)
+# this used to trigger on !py and >>>, but the >>> annoyed others than raylu
+#
+#    <Summertime> $> d['wow']
+#    <Summertime> [1, 2, 3]
+#    <darkf> wtf is $>
+#    <Summertime> its fuck pyhtonbot
+
+
 @bot.on_command("!py", NO_SPLITTING)
 async def annoy_raylu(self, _, recipient, text):
     if recipient == self.nick:
