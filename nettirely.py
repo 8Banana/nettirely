@@ -416,10 +416,9 @@ class IrcBot:
                 for callback in message_callbacks:
                     self.logger.debug(
                         "Spawning message callback "
-                        "%s(self, %r, %r, *%r) for message %r",
+                        "%s(self, %r, *%r) for message %r",
                         callback.__name__,
                         msg.sender,
-                        recipient,
                         msg.args,
                         msg.command,
                     )
