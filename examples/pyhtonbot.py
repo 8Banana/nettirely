@@ -247,7 +247,7 @@ async def kick_spammers(self, sender, channel, message):
     for spam_pattern in self.state["spammer_regexps"]:
         if re.search(spam_pattern, message) is not None:
             pass
-            #await self.kick(channel, sender.nick, "spamming detected")
+            # await self.kick(channel, sender.nick, "spamming detected")
 
 
 @bot.on_command("!spammer_regexps", NO_SPLITTING)

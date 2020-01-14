@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 def _get_output(args):
-    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.run(
+        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False
+    )
 
     if process.returncode == 0:
         return process.stdout.decode("ascii").strip()
@@ -84,6 +86,7 @@ class Supervisor:
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            check=False,
         )
 
         if command.returncode == 0:
