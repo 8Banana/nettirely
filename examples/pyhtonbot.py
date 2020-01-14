@@ -349,7 +349,7 @@ async def initialize_markov_chains(self):
 @bot.on_privmsg
 async def update_seen(self, sender, _channel, message):
     seen = self.state.setdefault("seen", {})
-    seen[sender.nick] = time.time()
+    seen[sender.nick] = int(time.time())
 
 
 @bot.on_command("!seen", 1)
@@ -357,7 +357,7 @@ async def show_seen(self, sender, channel, user):
     seen = self.state.get("seen", {})
 
     if user in seen:
-        when = time.time() - seen[user]
+        when = int(time.time()) - seen[user]
 
         for n, amount in enumerate(TIME_AMOUNTS):
             if when < 60 ** (n + 1):
